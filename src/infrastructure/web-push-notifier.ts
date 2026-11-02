@@ -3,7 +3,7 @@ import type { Notifier } from '../application/ports.ts'
 import type { VapidKeys } from './vapid.ts'
 
 export function createWebPushNotifier(keys: VapidKeys, subject: string): Notifier {
-  const options = { vapidDetails: { subject, ...keys }, TTL: 12 * 3600 }
+  const options = { vapidDetails: { subject, ...keys }, TTL: 12 * 3600, timeout: 10_000 }
   return {
     async send(s, payload) {
       try {

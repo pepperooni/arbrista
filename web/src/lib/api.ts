@@ -26,7 +26,9 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     throw new ApiError(0, 'Pas de connexion au serveur')
   }
 
-  if (res.status === 401 && session.token) {
+  // Only an authenticated route answering 401 means our session is gone; public routes (join, setup) never sign out.
+  const isPublic = path === '/setup' || path.startsWith('/join/')
+  if (res.status === 401 && session.token && !isPublic) {
     signOut()
     navigate('/welcome', { replace: true })
   }

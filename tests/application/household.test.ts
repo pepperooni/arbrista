@@ -1,7 +1,7 @@
 import { beforeEach, it, expect } from 'vitest'
 import { createTestContext } from '../support/test-context.ts'
 import { makeHouseholdUseCases } from '../../src/application/household.ts'
-import { UnauthorizedError, ValidationError } from '../../src/domain/errors.ts'
+import { NotFoundError, UnauthorizedError, ValidationError } from '../../src/domain/errors.ts'
 
 let hh: ReturnType<typeof makeHouseholdUseCases>
 
@@ -35,14 +35,14 @@ it('lets a new occupant join with the invite code only', () => {
   hh.setup({ householdName: 'Maison', occupantName: 'Léa' })
   const { inviteCode } = hh.getSettings()
   expect(hh.join(inviteCode, 'Tom').occupant.name).toBe('Tom')
-  expect(() => hh.join('wrong', 'Eve')).toThrow(UnauthorizedError)
+  expect(() => hh.join('wrong', 'Eve')).toThrow(NotFoundError)
 })
 
 it('regenerating the invite invalidates the old link but keeps sessions', () => {
   const lea = hh.setup({ householdName: 'Maison', occupantName: 'Léa' })
   const old = hh.getSettings().inviteCode
   hh.regenerateInvite()
-  expect(() => hh.join(old, 'Tom')).toThrow(UnauthorizedError)
+  expect(() => hh.join(old, 'Tom')).toThrow(NotFoundError)
   expect(hh.authenticate(lea.token).name).toBe('Léa')
 })
 

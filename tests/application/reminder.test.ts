@@ -71,3 +71,43 @@ it('subscribing the same device twice keeps one subscription', () => {
   reminder.subscribe(lea.id, { endpoint: 'e1', p256dh: 'k2', auth: 'a2' })
   expect(ctx.deps.pushSubscriptions.list()).toHaveLength(1)
 })
+
+function deferredNotifier() {
+  const sent: string[] = []
+  let release!: () => void
+  const gate = new Promise<void>((r) => (release = r))
+  return {
+    sent,
+    release,
+    async send(s: { endpoint: string }) {
+      sent.push(s.endpoint)
+      await gate
+      return 'sent' as const
+    },
+  }
+}
+
+it('overlapping runs (a slow push service) still send a single reminder', async () => {
+  const notifier = deferredNotifier()
+  const slow = makeReminderUseCases({ ...ctx.deps, notifier, watering })
+  ctx.clock.set('2026-11-02T17:00:00Z')
+  const first = slow.runIfDue()
+  ctx.clock.set('2026-11-02T17:01:00Z')
+  const second = slow.runIfDue()
+  notifier.release()
+  await Promise.all([first, second])
+  expect(notifier.sent).toEqual(['e1'])
+})
+
+it('settings changed while reminders are being sent are kept', async () => {
+  const notifier = deferredNotifier()
+  const slow = makeReminderUseCases({ ...ctx.deps, notifier, watering })
+  const household = makeHouseholdUseCases(ctx.deps)
+  ctx.clock.set('2026-11-02T17:00:00Z')
+  const run = slow.runIfDue()
+  household.updateSettings({ sessionTime: '07:00' })
+  const newCode = household.regenerateInvite()
+  notifier.release()
+  await run
+  expect(household.getSettings()).toMatchObject({ sessionTime: '07:00', inviteCode: newCode, lastReminderDate: '2026-11-02' })
+})

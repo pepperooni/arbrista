@@ -33,6 +33,8 @@ export function makeReminderUseCases(deps: {
       const now = clock.now()
       const today = toLocalDate(now, h.timezone)
       if (h.lastReminderDate === today || toLocalTime(now, h.timezone) < h.sessionTime) return { notified: 0 }
+      // Claim the day before sending: an overlapping run, or a slow push service, can never cause a second reminder.
+      if (!households.claimReminder(today)) return { notified: 0 }
 
       let notified = 0
       const { pending } = watering.today()
@@ -47,7 +49,6 @@ export function makeReminderUseCases(deps: {
           else console.warn(`Push notification failed for ${subs[i].endpoint}`)
         })
       }
-      households.save({ ...h, lastReminderDate: today })
       return { notified }
     },
   }

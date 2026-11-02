@@ -64,7 +64,7 @@ export function makeHouseholdUseCases(deps: { households: HouseholdRepository; o
 
     join(inviteCode: string, occupantName: string): AuthResult {
       const h = households.get()
-      if (!h || h.inviteCode !== inviteCode) throw new UnauthorizedError("Lien d'invitation invalide")
+      if (!h || h.inviteCode !== inviteCode) throw new NotFoundError("Ce lien d'invitation n'est plus valide, demandez-en un nouveau")
       return addOccupant(occupantName)
     },
 

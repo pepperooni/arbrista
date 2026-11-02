@@ -27,6 +27,12 @@ export function createHouseholdRepository(db: DatabaseSync): HouseholdRepository
         lastReminderDate: row.last_reminder_date,
       }
     },
+    claimReminder(day) {
+      const result = db
+        .prepare('UPDATE household SET last_reminder_date = ? WHERE id = 1 AND (last_reminder_date IS NULL OR last_reminder_date <> ?)')
+        .run(day, day)
+      return result.changes === 1
+    },
     save(h: Household) {
       db.prepare(
         `INSERT INTO household (id, name, invite_code, session_time, timezone, summer_start, winter_start, last_reminder_date)

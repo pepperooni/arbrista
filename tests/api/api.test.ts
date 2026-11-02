@@ -76,3 +76,22 @@ it('uploads a photo and exposes it as the main photo', async () => {
   expect(res.status).toBe(201)
   expect((await get(`/api/plants/${plant.id}`, lea.token)).mainPhotoUrl).toMatch(/^\/photos\/.+\.jpg$/)
 })
+
+it('a wrong invite link is "not found", not an authentication failure that would sign the user out', async () => {
+  await post('/api/setup', { householdName: 'Maison', occupantName: 'Léa' })
+  const res = await app.request('/api/join/old-code', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ occupantName: 'Tom' }),
+  })
+  expect(res.status).toBe(404)
+})
+
+it("a removed occupant's token is rejected", async () => {
+  const lea = await post('/api/setup', { householdName: 'Maison', occupantName: 'Léa' })
+  const { inviteCode } = await get('/api/household', lea.token)
+  const tom = await post(`/api/join/${inviteCode}`, { occupantName: 'Tom' })
+  const removed = await app.request(`/api/occupants/${tom.occupant.id}`, { method: 'DELETE', headers: auth(lea.token) })
+  expect(removed.status).toBe(204)
+  expect((await app.request('/api/session/today', { headers: auth(tom.token) })).status).toBe(401)
+})

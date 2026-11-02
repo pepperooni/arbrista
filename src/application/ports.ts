@@ -8,6 +8,8 @@ export interface Clock {
 export interface HouseholdRepository {
   get(): Household | null
   save(h: Household): void
+  /** Records today's reminder without touching other settings. Returns false if it was already recorded. */
+  claimReminder(day: LocalDate): boolean
 }
 
 export interface OccupantRepository {
