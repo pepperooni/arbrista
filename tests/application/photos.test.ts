@@ -12,12 +12,12 @@ let photos: ReturnType<typeof makePhotoUseCases>
 let plant: Plant
 const jpeg = { data: new Uint8Array([1, 2, 3]), mimeType: 'image/jpeg' }
 
-beforeEach(() => {
+beforeEach(async () => {
   ctx = createTestContext()
-  makeHouseholdUseCases(ctx.deps).setup({ householdName: 'Maison', occupantName: 'Léa' })
+  await makeHouseholdUseCases(ctx.deps).setup({ householdName: 'Maison', occupantName: 'Léa' })
   plants = makePlantUseCases(ctx.deps)
   photos = makePhotoUseCases(ctx.deps)
-  plant = plants.create({ name: 'Ficus', summerRhythm: { kind: 'interval', everyDays: 7 } })
+  plant = await plants.create({ name: 'Ficus', summerRhythm: { kind: 'interval', everyDays: 7 } })
 })
 
 it('first photo becomes main, then main can be changed', async () => {
@@ -25,8 +25,8 @@ it('first photo becomes main, then main can be changed', async () => {
   const b = await photos.add(plant.id, jpeg)
   expect(a.isMain).toBe(true)
   expect(b.isMain).toBe(false)
-  photos.setMain(b.id)
-  expect(ctx.deps.photos.listByPlant(plant.id).filter((p) => p.isMain).map((p) => p.id)).toEqual([b.id])
+  await photos.setMain(b.id)
+  expect((await ctx.deps.photos.listByPlant(plant.id)).filter((p) => p.isMain).map((p) => p.id)).toEqual([b.id])
 })
 
 it('stores the file under a non-guessable name with the right extension', async () => {
@@ -42,7 +42,7 @@ it('removing the main photo promotes the oldest remaining one', async () => {
   ctx.clock.set('2026-11-02T10:00:00Z')
   await photos.add(plant.id, jpeg)
   await photos.remove(a.id)
-  expect(ctx.deps.photos.get(b.id)!.isMain).toBe(true)
+  expect((await ctx.deps.photos.get(b.id))!.isMain).toBe(true)
   expect(ctx.deps.photoStorage.files.has(a.fileName)).toBe(false)
 })
 
@@ -57,6 +57,6 @@ it('deleting a plant removes its photo files', async () => {
   const a = await photos.add(plant.id, jpeg)
   await plants.remove(plant.id)
   expect(ctx.deps.photoStorage.files.size).toBe(0)
-  expect(() => plants.get(plant.id)).toThrow(NotFoundError)
-  expect(ctx.deps.photos.get(a.id)).toBeNull()
+  await expect(plants.get(plant.id)).rejects.toThrow(NotFoundError)
+  expect(await ctx.deps.photos.get(a.id)).toBeNull()
 })

@@ -10,12 +10,16 @@ const toHouseholdDto = ({ lastReminderDate: _, ...dto }: Household): HouseholdDt
 
 export function householdRoutes({ household }: UseCases) {
   return new Hono<AppEnv>()
-    .get('/household', (c) => c.json(toHouseholdDto(household.getSettings())))
-    .patch('/household', async (c) => c.json(toHouseholdDto(household.updateSettings(await readBody(c, householdPatchSchema)))))
-    .post('/household/invite', (c) => c.json({ inviteCode: household.regenerateInvite() }))
-    .get('/occupants', (c) => c.json(household.listOccupants().map((o): OccupantDto => ({ id: o.id, name: o.name }))))
-    .delete('/occupants/:id', (c) => {
-      household.removeOccupant(c.req.param('id'))
+    .get('/household', async (c) => c.json(toHouseholdDto(await household.getSettings())))
+    .patch('/household', async (c) =>
+      c.json(toHouseholdDto(await household.updateSettings(await readBody(c, householdPatchSchema)))),
+    )
+    .post('/household/invite', async (c) => c.json({ inviteCode: await household.regenerateInvite() }))
+    .get('/occupants', async (c) =>
+      c.json((await household.listOccupants()).map((o): OccupantDto => ({ id: o.id, name: o.name }))),
+    )
+    .delete('/occupants/:id', async (c) => {
+      await household.removeOccupant(c.req.param('id'))
       return c.body(null, 204)
     })
 }

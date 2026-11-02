@@ -1,17 +1,25 @@
-import webpush from 'web-push'
+import { buildPushPayload } from '@block65/webcrypto-web-push'
 import type { Notifier } from '../application/ports.ts'
 import type { VapidKeys } from './vapid.ts'
 
+const TIMEOUT_MS = 10_000
+
+/** Web Push (RFC 8291/8292) over fetch + Web Crypto: works on Node and Cloudflare Workers. */
 export function createWebPushNotifier(keys: VapidKeys, subject: string): Notifier {
-  const options = { vapidDetails: { subject, ...keys }, TTL: 12 * 3600, timeout: 10_000 }
+  const vapid = { subject, ...keys }
   return {
     async send(s, payload) {
       try {
-        await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify(payload), options)
-        return 'sent'
-      } catch (err) {
-        const status = (err as { statusCode?: number }).statusCode
-        return status === 404 || status === 410 ? 'gone' : 'failed'
+        const request = await buildPushPayload(
+          { data: JSON.stringify(payload), options: { ttl: 12 * 3600 } },
+          { endpoint: s.endpoint, expirationTime: null, keys: { p256dh: s.p256dh, auth: s.auth } },
+          vapid,
+        )
+        const res = await fetch(s.endpoint, { ...request, signal: AbortSignal.timeout(TIMEOUT_MS) })
+        if (res.ok) return 'sent'
+        return res.status === 404 || res.status === 410 ? 'gone' : 'failed'
+      } catch {
+        return 'failed'
       }
     },
   }

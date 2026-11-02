@@ -11,7 +11,7 @@ export function authMiddleware(useCases: UseCases) {
     if (PUBLIC_ROUTES.some((r) => r.test(`${c.req.method} ${c.req.path}`))) return next()
     const header = c.req.header('Authorization') ?? ''
     const token = header.startsWith('Bearer ') ? header.slice(7) : ''
-    c.set('occupant', useCases.household.authenticate(token))
+    c.set('occupant', await useCases.household.authenticate(token))
     return next()
   })
 }

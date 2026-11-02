@@ -12,8 +12,8 @@ export function photoRoutes({ photos }: UseCases) {
       const photo = await photos.add(c.req.param('id'), { data: new Uint8Array(await file.arrayBuffer()), mimeType: file.type })
       return c.json({ id: photo.id, url: `/photos/${photo.fileName}`, isMain: photo.isMain }, 201)
     })
-    .post('/photos/:id/main', (c) => {
-      const photo = photos.setMain(c.req.param('id'))
+    .post('/photos/:id/main', async (c) => {
+      const photo = await photos.setMain(c.req.param('id'))
       return c.json({ id: photo.id, url: `/photos/${photo.fileName}`, isMain: true })
     })
     .delete('/photos/:id', async (c) => {

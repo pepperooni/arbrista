@@ -12,43 +12,43 @@ let rooms: ReturnType<typeof makeRoomUseCases>
 let plants: ReturnType<typeof makePlantUseCases>
 const weekly7: RhythmInput = { kind: 'interval', everyDays: 7 }
 
-beforeEach(() => {
+beforeEach(async () => {
   ctx = createTestContext()
-  makeHouseholdUseCases(ctx.deps).setup({ householdName: 'Maison', occupantName: 'Léa' })
+  await makeHouseholdUseCases(ctx.deps).setup({ householdName: 'Maison', occupantName: 'Léa' })
   rooms = makeRoomUseCases(ctx.deps)
   plants = makePlantUseCases(ctx.deps)
 })
 
-it('creates rooms and rejects duplicates', () => {
-  rooms.create('Salon')
-  expect(() => rooms.create('salon')).toThrow(ValidationError)
-  expect(rooms.list().map((r) => r.name)).toEqual(['Salon'])
+it('creates rooms and rejects duplicates', async () => {
+  await rooms.create('Salon')
+  await expect(rooms.create('salon')).rejects.toThrow(ValidationError)
+  expect((await rooms.list()).map((r) => r.name)).toEqual(['Salon'])
 })
 
-it('creates a plant attached to the household by default', () => {
-  const p = plants.create({ name: 'Monstera', summerRhythm: weekly7 })
+it('creates a plant attached to the household by default', async () => {
+  const p = await plants.create({ name: 'Monstera', summerRhythm: weekly7 })
   expect(p.roomId).toBeNull()
   expect(p.rhythms.winter).toBeNull()
 })
 
-it('rejects a plant without a name or with an unknown room', () => {
-  expect(() => plants.create({ name: ' ', summerRhythm: weekly7 })).toThrow(ValidationError)
-  expect(() => plants.create({ name: 'Ficus', roomId: 'nope', summerRhythm: weekly7 })).toThrow(ValidationError)
+it('rejects a plant without a name or with an unknown room', async () => {
+  await expect(plants.create({ name: ' ', summerRhythm: weekly7 })).rejects.toThrow(ValidationError)
+  await expect(plants.create({ name: 'Ficus', roomId: 'nope', summerRhythm: weekly7 })).rejects.toThrow(ValidationError)
 })
 
-it('deleting a room moves its plants back to the household', () => {
-  const salon = rooms.create('Salon')
-  const p = plants.create({ name: 'Ficus', roomId: salon.id, summerRhythm: weekly7 })
-  rooms.remove(salon.id)
-  expect(plants.get(p.id).roomId).toBeNull()
+it('deleting a room moves its plants back to the household', async () => {
+  const salon = await rooms.create('Salon')
+  const p = await plants.create({ name: 'Ficus', roomId: salon.id, summerRhythm: weekly7 })
+  await rooms.remove(salon.id)
+  expect((await plants.get(p.id)).roomId).toBeNull()
 })
 
-it('changing the weekly rhythm re-anchors it on today; renaming does not', () => {
+it('changing the weekly rhythm re-anchors it on today; renaming does not', async () => {
   const weekly: RhythmInput = { kind: 'weekly', days: [5], everyWeeks: 2 }
-  const p = plants.create({ name: 'Ficus', summerRhythm: weekly }) // clock: 2026-11-02
+  const p = await plants.create({ name: 'Ficus', summerRhythm: weekly }) // clock: 2026-11-02
   ctx.clock.set('2026-11-12T08:00:00Z')
-  const renamed = plants.update(p.id, { name: 'Ficus lyrata', summerRhythm: weekly })
+  const renamed = await plants.update(p.id, { name: 'Ficus lyrata', summerRhythm: weekly })
   expect((renamed.rhythms.summer as WeeklyRhythm).anchor).toBe('2026-11-02')
-  const changed = plants.update(p.id, { name: 'Ficus lyrata', summerRhythm: { ...weekly, days: [6] } })
+  const changed = await plants.update(p.id, { name: 'Ficus lyrata', summerRhythm: { ...weekly, days: [6] } })
   expect((changed.rhythms.summer as WeeklyRhythm).anchor).toBe('2026-11-12')
 })

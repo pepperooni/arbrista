@@ -1,23 +1,21 @@
-import type { DatabaseSync } from 'node:sqlite'
 import type { RoomRepository } from '../../application/ports.ts'
 import type { Room } from '../../domain/plant.ts'
+import type { SqlDatabase } from './sql.ts'
 
-export function createRoomRepository(db: DatabaseSync): RoomRepository {
+export function createRoomRepository(db: SqlDatabase): RoomRepository {
   return {
-    list() {
-      return db.prepare('SELECT id, name FROM room ORDER BY name COLLATE NOCASE').all() as Room[]
+    list: () => db.all<Room>('SELECT id, name FROM room ORDER BY name COLLATE NOCASE'),
+    async get(id) {
+      return (await db.get<Room>('SELECT id, name FROM room WHERE id = ?', id)) ?? null
     },
-    get(id) {
-      return (db.prepare('SELECT id, name FROM room WHERE id = ?').get(id) as Room | undefined) ?? null
+    async findByName(name) {
+      return (await db.get<Room>('SELECT id, name FROM room WHERE name = ? COLLATE NOCASE', name)) ?? null
     },
-    findByName(name) {
-      return (db.prepare('SELECT id, name FROM room WHERE name = ? COLLATE NOCASE').get(name) as Room | undefined) ?? null
+    async save(r) {
+      await db.run('INSERT INTO room (id, name) VALUES (?, ?) ON CONFLICT (id) DO UPDATE SET name = excluded.name', r.id, r.name)
     },
-    save(r) {
-      db.prepare('INSERT INTO room (id, name) VALUES (?, ?) ON CONFLICT (id) DO UPDATE SET name = excluded.name').run(r.id, r.name)
-    },
-    remove(id) {
-      db.prepare('DELETE FROM room WHERE id = ?').run(id)
+    async remove(id) {
+      await db.run('DELETE FROM room WHERE id = ?', id)
     },
   }
 }

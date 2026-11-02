@@ -31,13 +31,13 @@ function isValidTimeZone(tz: string): boolean {
 export function makeHouseholdUseCases(deps: { households: HouseholdRepository; occupants: OccupantRepository; clock: Clock }) {
   const { households, occupants, clock } = deps
 
-  function requireHousehold(): Household {
-    const h = households.get()
+  async function requireHousehold(): Promise<Household> {
+    const h = await households.get()
     if (!h) throw new NotFoundError("Le logement n'est pas encore créé")
     return h
   }
 
-  function addOccupant(rawName: string): AuthResult {
+  async function addOccupant(rawName: string): Promise<AuthResult> {
     const occupant: Occupant = {
       id: randomUUID(),
       name: requireName(rawName, 'Le prénom', 60),
@@ -45,65 +45,63 @@ export function makeHouseholdUseCases(deps: { households: HouseholdRepository; o
       removedAt: null,
     }
     const token = randomBytes(32).toString('base64url')
-    occupants.add(occupant, hashToken(token))
+    await occupants.add(occupant, hashToken(token))
     return { token, occupant }
   }
 
   return {
-    isInitialized(): boolean {
-      return households.get() !== null
+    async isInitialized(): Promise<boolean> {
+      return (await households.get()) !== null
     },
 
-    setup(input: { householdName: string; occupantName: string }): AuthResult {
-      if (households.get()) throw new ValidationError('Le logement existe déjà')
+    async setup(input: { householdName: string; occupantName: string }): Promise<AuthResult> {
+      if (await households.get()) throw new ValidationError('Le logement existe déjà')
       const name = requireName(input.householdName, 'Le nom du logement', 60)
       requireName(input.occupantName, 'Le prénom', 60)
-      households.save({ name, inviteCode: newInviteCode(), ...DEFAULTS, lastReminderDate: null })
+      await households.save({ name, inviteCode: newInviteCode(), ...DEFAULTS, lastReminderDate: null })
       return addOccupant(input.occupantName)
     },
 
-    join(inviteCode: string, occupantName: string): AuthResult {
-      const h = households.get()
+    async join(inviteCode: string, occupantName: string): Promise<AuthResult> {
+      const h = await households.get()
       if (!h || h.inviteCode !== inviteCode) throw new NotFoundError("Ce lien d'invitation n'est plus valide, demandez-en un nouveau")
       return addOccupant(occupantName)
     },
 
-    authenticate(token: string): Occupant {
-      const occupant = token ? occupants.findByTokenHash(hashToken(token)) : null
+    async authenticate(token: string): Promise<Occupant> {
+      const occupant = token ? await occupants.findByTokenHash(hashToken(token)) : null
       if (!occupant) throw new UnauthorizedError('Session invalide')
       return occupant
     },
 
-    getSettings(): Household {
-      return requireHousehold()
-    },
+    getSettings: requireHousehold,
 
-    updateSettings(patch: HouseholdSettingsPatch): Household {
-      const current = requireHousehold()
+    async updateSettings(patch: HouseholdSettingsPatch): Promise<Household> {
+      const current = await requireHousehold()
       const next = { ...current, ...patch }
       next.name = requireName(next.name, 'Le nom du logement', 60)
       if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(next.sessionTime)) throw new ValidationError('Heure de session invalide (HH:MM)')
       if (!isValidTimeZone(next.timezone)) throw new ValidationError('Fuseau horaire inconnu')
       validateSeasonBounds(next)
-      households.save(next)
+      await households.save(next)
       return next
     },
 
-    regenerateInvite(): string {
-      const h = requireHousehold()
+    async regenerateInvite(): Promise<string> {
+      const h = await requireHousehold()
       const inviteCode = newInviteCode()
-      households.save({ ...h, inviteCode })
+      await households.save({ ...h, inviteCode })
       return inviteCode
     },
 
-    listOccupants(): Occupant[] {
+    listOccupants(): Promise<Occupant[]> {
       return occupants.listActive()
     },
 
-    removeOccupant(id: string): void {
-      const o = occupants.get(id)
+    async removeOccupant(id: string): Promise<void> {
+      const o = await occupants.get(id)
       if (!o || o.removedAt) throw new NotFoundError('Occupant introuvable')
-      occupants.markRemoved(id, clock.now().toISOString())
+      await occupants.markRemoved(id, clock.now().toISOString())
     },
   }
 }

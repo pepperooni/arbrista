@@ -53,15 +53,93 @@ docker run -d --name arrosoir -p 3000:3000 -v arrosoir-data:/data arrosoir
 - **iPhone** : les notifications ne fonctionnent qu'après « Partager → Sur l'écran d'accueil » (iOS 16.4 ou plus récent).
 - **Sauvegarde** : copiez le dossier de données (`arrosoir.db`, `photos/`, `vapid.json`). Si vous perdez `vapid.json`, chaque appareil devra réactiver ses notifications.
 
+## Déployer sur Cloudflare (gratuit)
+
+L'application tourne aussi sur le plan gratuit de Cloudflare, sans serveur à gérer ni carte bancaire :
+
+| Besoin | Service Cloudflare |
+|---|---|
+| API et interface | Workers + fichiers statiques |
+| Base de données | D1 (SQLite) |
+| Photos | Workers KV |
+| Rappel quotidien | Cron Trigger (chaque minute) |
+
+L'adresse obtenue est fixe, de la forme `https://arrosoir.<ton-sous-domaine>.workers.dev`. Elle est en HTTPS, ce qui permet d'installer l'application et de recevoir les notifications.
+
+**Première mise en ligne** (une seule fois, depuis ton ordinateur) :
+
+1. Connecte-toi à ton compte Cloudflare :
+
+   ```bash
+   npx wrangler login
+   ```
+
+2. Crée la base D1, puis copie l'identifiant affiché dans `wrangler.jsonc` (champ `database_id`) :
+
+   ```bash
+   npx wrangler d1 create arrosoir
+   ```
+
+3. Crée l'espace de stockage des photos, puis copie l'identifiant affiché dans `wrangler.jsonc` (champ `id` de `PHOTOS`) :
+
+   ```bash
+   npx wrangler kv namespace create PHOTOS
+   ```
+
+4. Remplace `VAPID_SUBJECT` dans `wrangler.jsonc` par ton adresse (`mailto:toi@exemple.fr`). Apple refuse les adresses factices.
+
+5. Génère les clés de notification :
+
+   ```bash
+   npm run vapid-keys
+   ```
+
+6. Enregistre-les comme secrets (colle la valeur correspondante quand c'est demandé) :
+
+   ```bash
+   npx wrangler secret put VAPID_PUBLIC_KEY
+   ```
+
+   ```bash
+   npx wrangler secret put VAPID_PRIVATE_KEY
+   ```
+
+7. Déploie :
+
+   ```bash
+   npm run deploy:cf
+   ```
+
+Pour chaque mise à jour, seule la dernière commande (`npm run deploy:cf`) est à relancer. Elle applique aussi les nouvelles migrations de base de données.
+
+**Ne régénère jamais les clés VAPID** après la mise en service. Sinon, chaque téléphone devra réactiver ses notifications.
+
+**Tester la version Cloudflare en local**, avec une base, un stockage et un cron simulés :
+
+1. Crée un fichier `.dev.vars` contenant les clés :
+
+   ```bash
+   npm run vapid-keys > .dev.vars
+   ```
+
+2. Lance l'application :
+
+   ```bash
+   npm run dev:cf
+   ```
+
+Elle répond sur http://localhost:8787.
+
 ## Architecture
 
-Un seul langage (TypeScript), un seul processus Node, un fichier SQLite.
+Un seul langage (TypeScript). Deux façons de l'exécuter, avec le même code métier : un processus Node et un fichier SQLite (auto-hébergement), ou Cloudflare Workers avec D1 (serverless).
 
 ```
 src/domain/          Règles métier pures : dates, rythmes, saisons, échéances, sessions
 src/application/     Cas d'usage et ports (interfaces vers le stockage, l'horloge, les notifications)
-src/infrastructure/  Adaptateurs : SQLite (node:sqlite), fichiers photo, Web Push
-src/server/          API HTTP (Hono), authentification par jeton, planificateur, composition
+src/infrastructure/  Adaptateurs : SQL commun à node:sqlite et D1, photos (disque ou KV), Web Push (Web Crypto)
+src/server/          API HTTP (Hono), authentification par jeton, composition ; point d'entrée Node + planificateur
+src/worker/          Point d'entrée Cloudflare Workers (D1, KV, Cron Trigger)
 src/shared/          Types échangés entre l'API et l'interface
 web/                 Interface Svelte 5 (PWA) : pages, composants, service worker
 tests/               Vitest : domaine, cas d'usage, API

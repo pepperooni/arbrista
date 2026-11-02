@@ -4,10 +4,21 @@ import type { OccupantRepository } from './ports.ts'
 
 export const photoUrl = (fileName: string): string => `/photos/${fileName}`
 
-export function occupantName(occupants: OccupantRepository, id: string): string {
-  return occupants.get(id)?.name ?? '?'
+export type NameOf = (occupantId: string) => Promise<string>
+
+/** Resolves occupant names (removed occupants included), each one fetched once. */
+export function occupantNames(occupants: OccupantRepository): NameOf {
+  const cache = new Map<string, Promise<string>>()
+  return (id) => {
+    let name = cache.get(id)
+    if (!name) {
+      name = occupants.get(id).then((o) => o?.name ?? '?')
+      cache.set(id, name)
+    }
+    return name
+  }
 }
 
-export function toWateringDto(w: Watering, occupants: OccupantRepository): WateringDto {
-  return { id: w.id, plantId: w.plantId, occupantName: occupantName(occupants, w.occupantId), at: w.wateredAt }
+export async function toWateringDto(w: Watering, nameOf: NameOf): Promise<WateringDto> {
+  return { id: w.id, plantId: w.plantId, occupantName: await nameOf(w.occupantId), at: w.wateredAt }
 }

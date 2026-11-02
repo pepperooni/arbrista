@@ -1,14 +1,16 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
-import { join } from 'node:path'
-import webpush from 'web-push'
-
+/** VAPID keys identify this server to push services (base64url: raw P-256 public point, private scalar `d`). */
 export type VapidKeys = { publicKey: string; privateKey: string }
 
-/** VAPID keys identify this server to push services; generated once and kept in the data dir. */
-export function loadOrCreateVapidKeys(dataDir: string): VapidKeys {
-  const file = join(dataDir, 'vapid.json')
-  if (existsSync(file)) return JSON.parse(readFileSync(file, 'utf8')) as VapidKeys
-  const keys = webpush.generateVAPIDKeys()
-  writeFileSync(file, JSON.stringify(keys, null, 2), { mode: 0o600 })
-  return keys
+const toBase64Url = (bytes: Uint8Array): string =>
+  btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+
+/** Web Crypto only, so it runs on Node and on Cloudflare Workers alike. */
+export async function generateVapidKeys(): Promise<VapidKeys> {
+  const pair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify'])
+  const publicKey = new Uint8Array(await crypto.subtle.exportKey('raw', pair.publicKey))
+  const { d } = await crypto.subtle.exportKey('jwk', pair.privateKey)
+  return { publicKey: toBase64Url(publicKey), privateKey: d! }
 }

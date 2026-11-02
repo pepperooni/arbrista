@@ -1,6 +1,6 @@
-import type { DatabaseSync } from 'node:sqlite'
 import type { WateringRepository } from '../../application/ports.ts'
 import type { Watering } from '../../domain/plant.ts'
+import type { SqlDatabase } from './sql.ts'
 
 type Row = { id: string; plant_id: string; occupant_id: string; watered_at: string; day: string }
 
@@ -14,45 +14,50 @@ const toWatering = (r: Row): Watering => ({
 
 const toDayMap = (rows: { plant_id: string; day: string }[]) => new Map(rows.map((r) => [r.plant_id, r.day]))
 
-export function createWateringRepository(db: DatabaseSync): WateringRepository {
+export function createWateringRepository(db: SqlDatabase): WateringRepository {
   return {
-    add(w) {
-      db.prepare('INSERT INTO watering (id, plant_id, occupant_id, watered_at, day) VALUES (?, ?, ?, ?, ?)').run(
+    async addUnlessRecent(w, sinceIso) {
+      const { changes } = await db.run(
+        `INSERT INTO watering (id, plant_id, occupant_id, watered_at, day)
+         SELECT ?, ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM watering WHERE plant_id = ? AND watered_at >= ?)`,
         w.id,
         w.plantId,
         w.occupantId,
         w.wateredAt,
         w.day,
+        w.plantId,
+        sinceIso,
       )
+      return changes === 1
     },
-    get(id) {
-      const row = db.prepare('SELECT * FROM watering WHERE id = ?').get(id) as Row | undefined
+    async get(id) {
+      const row = await db.get<Row>('SELECT * FROM watering WHERE id = ?', id)
       return row ? toWatering(row) : null
     },
-    remove(id) {
-      db.prepare('DELETE FROM watering WHERE id = ?').run(id)
+    async remove(id) {
+      await db.run('DELETE FROM watering WHERE id = ?', id)
     },
-    latestSince(plantId, sinceIso) {
-      const row = db
-        .prepare('SELECT * FROM watering WHERE plant_id = ? AND watered_at >= ? ORDER BY watered_at DESC LIMIT 1')
-        .get(plantId, sinceIso) as Row | undefined
+    async latestSince(plantId, sinceIso) {
+      const row = await db.get<Row>(
+        'SELECT * FROM watering WHERE plant_id = ? AND watered_at >= ? ORDER BY watered_at DESC LIMIT 1',
+        plantId,
+        sinceIso,
+      )
       return row ? toWatering(row) : null
     },
-    lastDayBefore(day) {
-      return toDayMap(
-        db.prepare('SELECT plant_id, MAX(day) AS day FROM watering WHERE day < ? GROUP BY plant_id').all(day) as Row[],
+    async lastDayBefore(day) {
+      return toDayMap(await db.all<Row>('SELECT plant_id, MAX(day) AS day FROM watering WHERE day < ? GROUP BY plant_id', day))
+    },
+    async lastDay() {
+      return toDayMap(await db.all<Row>('SELECT plant_id, MAX(day) AS day FROM watering GROUP BY plant_id'))
+    },
+    async onDay(day) {
+      return (await db.all<Row>('SELECT * FROM watering WHERE day = ? ORDER BY watered_at', day)).map(toWatering)
+    },
+    async history(plantId, limit) {
+      return (await db.all<Row>('SELECT * FROM watering WHERE plant_id = ? ORDER BY watered_at DESC LIMIT ?', plantId, limit)).map(
+        toWatering,
       )
-    },
-    lastDay() {
-      return toDayMap(db.prepare('SELECT plant_id, MAX(day) AS day FROM watering GROUP BY plant_id').all() as Row[])
-    },
-    onDay(day) {
-      return (db.prepare('SELECT * FROM watering WHERE day = ? ORDER BY watered_at').all(day) as Row[]).map(toWatering)
-    },
-    history(plantId, limit) {
-      return (
-        db.prepare('SELECT * FROM watering WHERE plant_id = ? ORDER BY watered_at DESC LIMIT ?').all(plantId, limit) as Row[]
-      ).map(toWatering)
     },
   }
 }

@@ -14,14 +14,14 @@ let lea: Occupant
 let ficus: Plant
 
 // Paris is UTC+1 in November: 18:00 local = 17:00Z.
-beforeEach(() => {
+beforeEach(async () => {
   ctx = createTestContext()
-  lea = makeHouseholdUseCases(ctx.deps).setup({ householdName: 'Maison', occupantName: 'Léa' }).occupant
+  lea = (await makeHouseholdUseCases(ctx.deps).setup({ householdName: 'Maison', occupantName: 'Léa' })).occupant
   plants = makePlantUseCases(ctx.deps)
   watering = makeWateringUseCases(ctx.deps)
   reminder = makeReminderUseCases({ ...ctx.deps, watering })
-  ficus = plants.create({ name: 'Ficus', summerRhythm: { kind: 'interval', everyDays: 7 } })
-  reminder.subscribe(lea.id, { endpoint: 'e1', p256dh: 'k', auth: 'a' })
+  ficus = await plants.create({ name: 'Ficus', summerRhythm: { kind: 'interval', everyDays: 7 } })
+  await reminder.subscribe(lea.id, { endpoint: 'e1', p256dh: 'k', auth: 'a' })
 })
 
 it('does nothing before session time', async () => {
@@ -31,7 +31,7 @@ it('does nothing before session time', async () => {
 })
 
 it('sends one grouped notification at session time, once per day', async () => {
-  plants.create({ name: 'Basilic', summerRhythm: { kind: 'interval', everyDays: 3 } })
+  await plants.create({ name: 'Basilic', summerRhythm: { kind: 'interval', everyDays: 3 } })
   ctx.clock.set('2026-11-02T17:00:00Z')
   await reminder.runIfDue()
   ctx.clock.set('2026-11-02T17:01:00Z')
@@ -53,23 +53,23 @@ it('catches up after a restart past session time', async () => {
 })
 
 it('stays silent when the session is empty', async () => {
-  watering.water(ficus.id, lea.id)
+  await watering.water(ficus.id, lea.id)
   ctx.clock.set('2026-11-02T17:00:00Z')
   await reminder.runIfDue()
   expect(ctx.deps.notifier.sent).toHaveLength(0)
 })
 
 it('drops expired subscriptions and keeps notifying others', async () => {
-  reminder.subscribe(lea.id, { endpoint: 'e2', p256dh: 'k', auth: 'a' })
+  await reminder.subscribe(lea.id, { endpoint: 'e2', p256dh: 'k', auth: 'a' })
   ctx.deps.notifier.result = (ep) => (ep === 'e1' ? 'gone' : 'sent')
   ctx.clock.set('2026-11-02T17:00:00Z')
   expect(await reminder.runIfDue()).toEqual({ notified: 1 })
-  expect(ctx.deps.pushSubscriptions.list().map((s) => s.endpoint)).toEqual(['e2'])
+  expect((await ctx.deps.pushSubscriptions.list()).map((s) => s.endpoint)).toEqual(['e2'])
 })
 
-it('subscribing the same device twice keeps one subscription', () => {
-  reminder.subscribe(lea.id, { endpoint: 'e1', p256dh: 'k2', auth: 'a2' })
-  expect(ctx.deps.pushSubscriptions.list()).toHaveLength(1)
+it('subscribing the same device twice keeps one subscription', async () => {
+  await reminder.subscribe(lea.id, { endpoint: 'e1', p256dh: 'k2', auth: 'a2' })
+  expect(await ctx.deps.pushSubscriptions.list()).toHaveLength(1)
 })
 
 function deferredNotifier() {
@@ -105,9 +105,9 @@ it('settings changed while reminders are being sent are kept', async () => {
   const household = makeHouseholdUseCases(ctx.deps)
   ctx.clock.set('2026-11-02T17:00:00Z')
   const run = slow.runIfDue()
-  household.updateSettings({ sessionTime: '07:00' })
-  const newCode = household.regenerateInvite()
+  await household.updateSettings({ sessionTime: '07:00' })
+  const newCode = await household.regenerateInvite()
   notifier.release()
   await run
-  expect(household.getSettings()).toMatchObject({ sessionTime: '07:00', inviteCode: newCode, lastReminderDate: '2026-11-02' })
+  expect(await household.getSettings()).toMatchObject({ sessionTime: '07:00', inviteCode: newCode, lastReminderDate: '2026-11-02' })
 })

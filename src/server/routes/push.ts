@@ -9,11 +9,11 @@ export function pushRoutes({ reminder }: UseCases, vapidPublicKey: string) {
     .get('/push/public-key', (c) => c.json({ publicKey: vapidPublicKey }))
     .post('/push/subscriptions', async (c) => {
       const { endpoint, keys } = await readBody(c, pushSubscriptionSchema)
-      reminder.subscribe(c.get('occupant').id, { endpoint, ...keys })
+      await reminder.subscribe(c.get('occupant').id, { endpoint, ...keys })
       return c.body(null, 204)
     })
     .delete('/push/subscriptions', async (c) => {
-      reminder.unsubscribe((await readBody(c, endpointSchema)).endpoint)
+      await reminder.unsubscribe((await readBody(c, endpointSchema)).endpoint)
       return c.body(null, 204)
     })
 }

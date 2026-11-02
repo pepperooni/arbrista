@@ -1,4 +1,3 @@
-import type { DatabaseSync } from 'node:sqlite'
 import { makeHouseholdUseCases } from '../application/household.ts'
 import { makePhotoUseCases } from '../application/photos.ts'
 import { makePlantUseCases } from '../application/plants.ts'
@@ -12,9 +11,10 @@ import { createPhotoRepository } from '../infrastructure/sqlite/photo-repo.ts'
 import { createPlantRepository } from '../infrastructure/sqlite/plant-repo.ts'
 import { createPushSubscriptionRepository } from '../infrastructure/sqlite/push-repo.ts'
 import { createRoomRepository } from '../infrastructure/sqlite/room-repo.ts'
+import type { SqlDatabase } from '../infrastructure/sqlite/sql.ts'
 import { createWateringRepository } from '../infrastructure/sqlite/watering-repo.ts'
 
-export type Deps = { db: DatabaseSync; clock: Clock; photoStorage: PhotoStorage; notifier: Notifier }
+export type Deps = { db: SqlDatabase; clock: Clock; photoStorage: PhotoStorage; notifier: Notifier }
 
 /** Composition root: wires SQLite repositories and outside-world adapters into the use cases. */
 export function composeUseCases({ db, clock, photoStorage, notifier }: Deps) {

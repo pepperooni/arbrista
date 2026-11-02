@@ -7,37 +7,37 @@ import type { RoomRepository } from './ports.ts'
 export function makeRoomUseCases(deps: { rooms: RoomRepository }) {
   const { rooms } = deps
 
-  function checkName(raw: string, exceptId?: string): string {
+  async function checkName(raw: string, exceptId?: string): Promise<string> {
     const name = requireName(raw, 'Le nom de la pièce', 40)
-    const existing = rooms.findByName(name)
+    const existing = await rooms.findByName(name)
     if (existing && existing.id !== exceptId) throw new ValidationError(`La pièce « ${name} » existe déjà`)
     return name
   }
 
-  function requireRoom(id: string): Room {
-    const room = rooms.get(id)
+  async function requireRoom(id: string): Promise<Room> {
+    const room = await rooms.get(id)
     if (!room) throw new NotFoundError('Pièce introuvable')
     return room
   }
 
   return {
-    list: (): Room[] => rooms.list(),
+    list: (): Promise<Room[]> => rooms.list(),
 
-    create(name: string): Room {
-      const room = { id: randomUUID(), name: checkName(name) }
-      rooms.save(room)
+    async create(name: string): Promise<Room> {
+      const room = { id: randomUUID(), name: await checkName(name) }
+      await rooms.save(room)
       return room
     },
 
-    rename(id: string, name: string): Room {
-      const room = { ...requireRoom(id), name: checkName(name, id) }
-      rooms.save(room)
+    async rename(id: string, name: string): Promise<Room> {
+      const room = { ...(await requireRoom(id)), name: await checkName(name, id) }
+      await rooms.save(room)
       return room
     },
 
-    remove(id: string): void {
-      requireRoom(id)
-      rooms.remove(id)
+    async remove(id: string): Promise<void> {
+      await requireRoom(id)
+      await rooms.remove(id)
     },
   }
 }

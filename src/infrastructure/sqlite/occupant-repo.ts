@@ -1,15 +1,16 @@
-import type { DatabaseSync } from 'node:sqlite'
 import type { OccupantRepository } from '../../application/ports.ts'
 import type { Occupant } from '../../domain/plant.ts'
+import type { SqlDatabase } from './sql.ts'
 
 type Row = { id: string; name: string; created_at: string; removed_at: string | null }
 
 const toOccupant = (r: Row): Occupant => ({ id: r.id, name: r.name, createdAt: r.created_at, removedAt: r.removed_at })
 
-export function createOccupantRepository(db: DatabaseSync): OccupantRepository {
+export function createOccupantRepository(db: SqlDatabase): OccupantRepository {
   return {
-    add(o, tokenHash) {
-      db.prepare('INSERT INTO occupant (id, name, token_hash, created_at, removed_at) VALUES (?, ?, ?, ?, ?)').run(
+    async add(o, tokenHash) {
+      await db.run(
+        'INSERT INTO occupant (id, name, token_hash, created_at, removed_at) VALUES (?, ?, ?, ?, ?)',
         o.id,
         o.name,
         tokenHash,
@@ -17,20 +18,20 @@ export function createOccupantRepository(db: DatabaseSync): OccupantRepository {
         o.removedAt,
       )
     },
-    get(id) {
-      const row = db.prepare('SELECT * FROM occupant WHERE id = ?').get(id) as Row | undefined
+    async get(id) {
+      const row = await db.get<Row>('SELECT * FROM occupant WHERE id = ?', id)
       return row ? toOccupant(row) : null
     },
-    findByTokenHash(hash) {
-      const row = db.prepare('SELECT * FROM occupant WHERE token_hash = ? AND removed_at IS NULL').get(hash) as Row | undefined
+    async findByTokenHash(hash) {
+      const row = await db.get<Row>('SELECT * FROM occupant WHERE token_hash = ? AND removed_at IS NULL', hash)
       return row ? toOccupant(row) : null
     },
-    listActive() {
-      return (db.prepare('SELECT * FROM occupant WHERE removed_at IS NULL ORDER BY created_at, name').all() as Row[]).map(toOccupant)
+    async listActive() {
+      return (await db.all<Row>('SELECT * FROM occupant WHERE removed_at IS NULL ORDER BY created_at, name')).map(toOccupant)
     },
-    markRemoved(id, at) {
-      db.prepare('UPDATE occupant SET removed_at = ?, token_hash = NULL WHERE id = ?').run(at, id)
-      db.prepare('DELETE FROM push_subscription WHERE occupant_id = ?').run(id)
+    async markRemoved(id, at) {
+      await db.run('UPDATE occupant SET removed_at = ?, token_hash = NULL WHERE id = ?', at, id)
+      await db.run('DELETE FROM push_subscription WHERE occupant_id = ?', id)
     },
   }
 }

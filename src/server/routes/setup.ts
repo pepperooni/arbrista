@@ -10,10 +10,10 @@ const toAuthDto = ({ token, occupant }: AuthResult): AuthDto => ({ token, occupa
 
 export function setupRoutes({ household }: UseCases) {
   return new Hono<AppEnv>()
-    .get('/setup', (c) => c.json({ initialized: household.isInitialized() }))
-    .post('/setup', async (c) => c.json(toAuthDto(household.setup(await readBody(c, setupSchema))), 201))
+    .get('/setup', async (c) => c.json({ initialized: await household.isInitialized() }))
+    .post('/setup', async (c) => c.json(toAuthDto(await household.setup(await readBody(c, setupSchema))), 201))
     .post('/join/:code', async (c) => {
       const { occupantName } = await readBody(c, joinSchema)
-      return c.json(toAuthDto(household.join(c.req.param('code'), occupantName)), 201)
+      return c.json(toAuthDto(await household.join(c.req.param('code'), occupantName)), 201)
     })
 }

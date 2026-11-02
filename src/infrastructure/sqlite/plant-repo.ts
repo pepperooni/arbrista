@@ -1,6 +1,6 @@
-import type { DatabaseSync } from 'node:sqlite'
 import type { PlantRepository } from '../../application/ports.ts'
 import type { Plant } from '../../domain/plant.ts'
+import type { SqlDatabase } from './sql.ts'
 
 type Row = {
   id: string
@@ -25,23 +25,22 @@ const toPlant = (r: Row): Plant => ({
   createdAt: r.created_at,
 })
 
-export function createPlantRepository(db: DatabaseSync): PlantRepository {
+export function createPlantRepository(db: SqlDatabase): PlantRepository {
   return {
-    list() {
-      return (db.prepare('SELECT * FROM plant ORDER BY name COLLATE NOCASE').all() as Row[]).map(toPlant)
+    async list() {
+      return (await db.all<Row>('SELECT * FROM plant ORDER BY name COLLATE NOCASE')).map(toPlant)
     },
-    get(id) {
-      const row = db.prepare('SELECT * FROM plant WHERE id = ?').get(id) as Row | undefined
+    async get(id) {
+      const row = await db.get<Row>('SELECT * FROM plant WHERE id = ?', id)
       return row ? toPlant(row) : null
     },
-    save(p) {
-      db.prepare(
+    async save(p) {
+      await db.run(
         `INSERT INTO plant (id, name, scientific_name, description, care, room_id, summer_rhythm, winter_rhythm, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (id) DO UPDATE SET name = excluded.name, scientific_name = excluded.scientific_name,
            description = excluded.description, care = excluded.care, room_id = excluded.room_id,
            summer_rhythm = excluded.summer_rhythm, winter_rhythm = excluded.winter_rhythm`,
-      ).run(
         p.id,
         p.name,
         p.scientificName,
@@ -53,8 +52,8 @@ export function createPlantRepository(db: DatabaseSync): PlantRepository {
         p.createdAt,
       )
     },
-    remove(id) {
-      db.prepare('DELETE FROM plant WHERE id = ?').run(id)
+    async remove(id) {
+      await db.run('DELETE FROM plant WHERE id = ?', id)
     },
   }
 }

@@ -16,7 +16,7 @@ import type {
   RoomRepository,
   WateringRepository,
 } from './ports.ts'
-import { photoUrl, toWateringDto } from './views.ts'
+import { occupantNames, photoUrl, toWateringDto } from './views.ts'
 
 const HISTORY_LIMIT = 20
 
@@ -47,22 +47,22 @@ function cleanCare(care: Care = {}): Care {
 export function makePlantUseCases(deps: PlantDeps) {
   const { plants, rooms, households, photos, photoStorage, waterings, occupants, clock } = deps
 
-  function household(): Household {
-    const h = households.get()
+  async function household(): Promise<Household> {
+    const h = await households.get()
     if (!h) throw new NotFoundError("Le logement n'est pas encore créé")
     return h
   }
 
-  function requirePlant(id: string): Plant {
-    const plant = plants.get(id)
+  async function requirePlant(id: string): Promise<Plant> {
+    const plant = await plants.get(id)
     if (!plant) throw new NotFoundError('Plante introuvable')
     return plant
   }
 
-  function build(input: PlantInput, previous: Plant | null): Plant {
+  async function build(input: PlantInput, previous: Plant | null): Promise<Plant> {
     const roomId = input.roomId ?? null
-    if (roomId && !rooms.get(roomId)) throw new ValidationError('Pièce inconnue')
-    const today = toLocalDate(clock.now(), household().timezone)
+    if (roomId && !(await rooms.get(roomId))) throw new ValidationError('Pièce inconnue')
+    const today = toLocalDate(clock.now(), (await household()).timezone)
     return {
       id: previous?.id ?? randomUUID(),
       name: requireName(input.name, 'Le nom', 80),
@@ -94,46 +94,53 @@ export function makePlantUseCases(deps: PlantDeps) {
   }
 
   return {
-    list: (): Plant[] => plants.list(),
+    list: (): Promise<Plant[]> => plants.list(),
 
-    summaries(): PlantSummaryDto[] {
-      const h = household()
-      const lastDays = waterings.lastDay()
-      const mains = photos.mainFileNames()
-      return plants.list().map((p) => summarize(p, h, lastDays, mains))
+    async summaries(): Promise<PlantSummaryDto[]> {
+      const [h, lastDays, mains, all] = await Promise.all([household(), waterings.lastDay(), photos.mainFileNames(), plants.list()])
+      return all.map((p) => summarize(p, h, lastDays, mains))
     },
 
-    detail(id: string): PlantDetailDto {
-      const p = requirePlant(id)
+    async detail(id: string): Promise<PlantDetailDto> {
+      const p = await requirePlant(id)
+      const [h, lastDays, mains, plantPhotos, history] = await Promise.all([
+        household(),
+        waterings.lastDay(),
+        photos.mainFileNames(),
+        photos.listByPlant(id),
+        waterings.history(id, HISTORY_LIMIT),
+      ])
+      const nameOf = occupantNames(occupants)
       return {
-        ...summarize(p, household(), waterings.lastDay(), photos.mainFileNames()),
+        ...summarize(p, h, lastDays, mains),
         description: p.description,
         care: p.care,
         summerRhythm: p.rhythms.summer,
         winterRhythm: p.rhythms.winter,
-        photos: photos.listByPlant(id).map((ph) => ({ id: ph.id, url: photoUrl(ph.fileName), isMain: ph.isMain })),
-        history: waterings.history(id, HISTORY_LIMIT).map((w) => toWateringDto(w, occupants)),
+        photos: plantPhotos.map((ph) => ({ id: ph.id, url: photoUrl(ph.fileName), isMain: ph.isMain })),
+        history: await Promise.all(history.map((w) => toWateringDto(w, nameOf))),
       }
     },
+
     get: requirePlant,
 
-    create(input: PlantInput): Plant {
-      const plant = build(input, null)
-      plants.save(plant)
+    async create(input: PlantInput): Promise<Plant> {
+      const plant = await build(input, null)
+      await plants.save(plant)
       return plant
     },
 
-    update(id: string, input: PlantInput): Plant {
-      const plant = build(input, requirePlant(id))
-      plants.save(plant)
+    async update(id: string, input: PlantInput): Promise<Plant> {
+      const plant = await build(input, await requirePlant(id))
+      await plants.save(plant)
       return plant
     },
 
     /** Deletes the plant, its history and its photo files. */
     async remove(id: string): Promise<void> {
-      requirePlant(id)
-      const files = photos.listByPlant(id).map((p) => p.fileName)
-      plants.remove(id)
+      await requirePlant(id)
+      const files = (await photos.listByPlant(id)).map((p) => p.fileName)
+      await plants.remove(id)
       await Promise.all(files.map((f) => photoStorage.remove(f)))
     },
   }
