@@ -72,13 +72,12 @@ L'adresse obtenue est fixe, de la forme `https://arbrista.<ton-sous-domaine>.wor
 
 1. Dans `wrangler.jsonc`, remplace `VAPID_SUBJECT` par ton adresse (`mailto:toi@exemple.fr`) et pousse la modification. Apple refuse les adresses factices.
 2. Dans le tableau de bord Cloudflare, va dans **Workers & Pages → Create → Import a repository**, puis choisis ce dépôt GitHub.
-3. Dans les réglages de build, renseigne :
-   - **Build command** : `npm run build`
-   - **Deploy command** : `npx wrangler deploy && npx wrangler d1 migrations apply arbrista --remote`
+3. Dans les réglages de build, renseigne **Build command** : `npm run build`. Garde la **Deploy command** par défaut : `npx wrangler deploy`.
 4. Lance le déploiement.
 
 Rien d'autre n'est à faire à la main :
 - la base D1 et l'espace KV sont **créés automatiquement** au premier déploiement, puis réutilisés ;
+- le **schéma de la base** est créé et mis à jour par l'application elle-même au démarrage ;
 - les **clés de notification** sont générées au premier usage et conservées dans KV ;
 - le **cron** du rappel quotidien est déclaré dans `wrangler.jsonc`.
 
@@ -98,7 +97,7 @@ Si le premier déploiement échoue sur la création de la base ou du KV (droits 
    npm run deploy:cf
    ```
 
-Cette commande compile l'interface, déploie le Worker (en créant la base D1 et le KV la première fois), puis applique les migrations de base de données. Relance-la à chaque mise à jour.
+Cette commande compile l'interface et déploie le Worker. La première fois, elle crée aussi la base D1 et le KV. Relance-la à chaque mise à jour.
 
 ### Bon à savoir
 

@@ -15,8 +15,8 @@
     "build": "vite build",
     "check": "svelte-check --tsconfig ./web/tsconfig.json",
     "vapid-keys": "node scripts/vapid-keys.ts",
-    "dev:cf": "npm run build && wrangler d1 migrations apply arbrista --local && wrangler dev --local",
-    "deploy:cf": "npm run build && wrangler deploy && wrangler d1 migrations apply arbrista --remote"
+    "dev:cf": "npm run build && wrangler dev --local",
+    "deploy:cf": "npm run build && wrangler deploy"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261102.1",

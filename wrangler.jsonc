@@ -5,6 +5,9 @@
   "main": "src/worker/index.ts",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  // Preview deployments would share the production database: keep them off.
+  "preview_urls": false,
   "assets": {
     "directory": "dist/web",
     "not_found_handling": "single-page-application",
