@@ -92,6 +92,8 @@
   }
 
   .search input {
+    -webkit-appearance: none;
+    appearance: none;
     flex: 1;
     min-width: 0;
     border: 0;
