@@ -3,6 +3,7 @@ import { createHouseholdRepository } from '../../src/infrastructure/sqlite/house
 import { createOccupantRepository } from '../../src/infrastructure/sqlite/occupant-repo.ts'
 import { createPhotoRepository } from '../../src/infrastructure/sqlite/photo-repo.ts'
 import { createPlantRepository } from '../../src/infrastructure/sqlite/plant-repo.ts'
+import { createWateringRepository } from '../../src/infrastructure/sqlite/watering-repo.ts'
 import { createRoomRepository } from '../../src/infrastructure/sqlite/room-repo.ts'
 
 export function createFakeClock(start: string) {
@@ -40,6 +41,7 @@ export function createTestContext(start = '2026-11-02T08:00:00Z') {
     plants: createPlantRepository(db),
     photos: createPhotoRepository(db),
     photoStorage: createFakePhotoStorage(),
+    waterings: createWateringRepository(db),
   }
   return { db, clock, deps }
 }

@@ -17,3 +17,46 @@ export type RoomDto = { id: string; name: string }
 
 export type { Care, Exposure, Humidity, PlantInput, RhythmInput } from '../domain/plant.ts'
 export type { Rhythm } from '../domain/rhythm.ts'
+
+export type WateredDto = { wateringId: string; occupantName: string; at: string }
+
+export type SessionItemDto = {
+  plantId: string
+  name: string
+  roomName: string | null
+  mainPhotoUrl: string | null
+  dueDate: string
+  daysOverdue: number
+  done: WateredDto | null
+}
+
+export type SessionDto = {
+  date: string
+  items: SessionItemDto[]
+  pending: number
+  total: number
+  next: { date: string; count: number } | null
+}
+
+export type WateringDto = { id: string; plantId: string; occupantName: string; at: string }
+
+export type PlantSummaryDto = {
+  id: string
+  name: string
+  scientificName: string | null
+  roomId: string | null
+  mainPhotoUrl: string | null
+  nextDue: string
+  daysOverdue: number
+}
+
+export type PhotoDto = { id: string; url: string; isMain: boolean }
+
+export type PlantDetailDto = PlantSummaryDto & {
+  description: string | null
+  care: import('../domain/plant.ts').Care
+  summerRhythm: import('../domain/rhythm.ts').Rhythm
+  winterRhythm: import('../domain/rhythm.ts').Rhythm | null
+  photos: PhotoDto[]
+  history: WateringDto[]
+}

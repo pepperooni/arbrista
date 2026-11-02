@@ -1,4 +1,5 @@
-import type { Household, Occupant, Photo, Plant, Room } from '../domain/plant.ts'
+import type { LocalDate } from '../domain/calendar.ts'
+import type { Household, Occupant, Photo, Plant, Room, Watering } from '../domain/plant.ts'
 
 export interface Clock {
   now(): Date
@@ -48,4 +49,20 @@ export interface PhotoRepository {
 export interface PhotoStorage {
   write(fileName: string, data: Uint8Array): Promise<void>
   remove(fileName: string): Promise<void>
+}
+
+export interface WateringRepository {
+  add(w: Watering): void
+  get(id: string): Watering | null
+  remove(id: string): void
+  /** Latest watering of the plant at or after `sinceIso`. */
+  latestSince(plantId: string, sinceIso: string): Watering | null
+  /** plantId → latest watering day strictly before `day`. */
+  lastDayBefore(day: LocalDate): Map<string, LocalDate>
+  /** plantId → latest watering day. */
+  lastDay(): Map<string, LocalDate>
+  /** Waterings of the day, oldest first. */
+  onDay(day: LocalDate): Watering[]
+  /** Newest first. */
+  history(plantId: string, limit: number): Watering[]
 }

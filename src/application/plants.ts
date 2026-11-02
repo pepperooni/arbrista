@@ -1,10 +1,24 @@
 import { randomUUID } from 'node:crypto'
 import { toLocalDate } from '../domain/calendar.ts'
+import { daysOverdue, nextDueDate } from '../domain/schedule.ts'
+import type { PlantDetailDto, PlantSummaryDto } from '../shared/api-types.ts'
 import { NotFoundError, ValidationError } from '../domain/errors.ts'
 import { toRhythm } from '../domain/plant.ts'
 import type { Care, Household, Plant, PlantInput } from '../domain/plant.ts'
 import { requireName } from './household.ts'
-import type { Clock, HouseholdRepository, PhotoRepository, PhotoStorage, PlantRepository, RoomRepository } from './ports.ts'
+import type {
+  Clock,
+  HouseholdRepository,
+  OccupantRepository,
+  PhotoRepository,
+  PhotoStorage,
+  PlantRepository,
+  RoomRepository,
+  WateringRepository,
+} from './ports.ts'
+import { photoUrl, toWateringDto } from './views.ts'
+
+const HISTORY_LIMIT = 20
 
 export type PlantDeps = {
   plants: PlantRepository
@@ -12,6 +26,8 @@ export type PlantDeps = {
   households: HouseholdRepository
   photos: PhotoRepository
   photoStorage: PhotoStorage
+  waterings: WateringRepository
+  occupants: OccupantRepository
   clock: Clock
 }
 
@@ -29,7 +45,7 @@ function cleanCare(care: Care = {}): Care {
 }
 
 export function makePlantUseCases(deps: PlantDeps) {
-  const { plants, rooms, households, photos, photoStorage, clock } = deps
+  const { plants, rooms, households, photos, photoStorage, waterings, occupants, clock } = deps
 
   function household(): Household {
     const h = households.get()
@@ -62,8 +78,43 @@ export function makePlantUseCases(deps: PlantDeps) {
     }
   }
 
+  function summarize(p: Plant, h: Household, lastDays: Map<string, string>, mains: Map<string, string>): PlantSummaryDto {
+    const today = toLocalDate(clock.now(), h.timezone)
+    const nextDue = nextDueDate(p.rhythms, lastDays.get(p.id) ?? null, today, h)
+    const main = mains.get(p.id)
+    return {
+      id: p.id,
+      name: p.name,
+      scientificName: p.scientificName,
+      roomId: p.roomId,
+      mainPhotoUrl: main ? photoUrl(main) : null,
+      nextDue,
+      daysOverdue: daysOverdue(nextDue, today),
+    }
+  }
+
   return {
     list: (): Plant[] => plants.list(),
+
+    summaries(): PlantSummaryDto[] {
+      const h = household()
+      const lastDays = waterings.lastDay()
+      const mains = photos.mainFileNames()
+      return plants.list().map((p) => summarize(p, h, lastDays, mains))
+    },
+
+    detail(id: string): PlantDetailDto {
+      const p = requirePlant(id)
+      return {
+        ...summarize(p, household(), waterings.lastDay(), photos.mainFileNames()),
+        description: p.description,
+        care: p.care,
+        summerRhythm: p.rhythms.summer,
+        winterRhythm: p.rhythms.winter,
+        photos: photos.listByPlant(id).map((ph) => ({ id: ph.id, url: photoUrl(ph.fileName), isMain: ph.isMain })),
+        history: waterings.history(id, HISTORY_LIMIT).map((w) => toWateringDto(w, occupants)),
+      }
+    },
     get: requirePlant,
 
     create(input: PlantInput): Plant {
