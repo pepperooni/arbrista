@@ -45,3 +45,34 @@ export function dueLabel(nextDue: string, today: string): { text: string; tone: 
 }
 
 export { shortDayFormat }
+
+export const WEEKDAY_SHORT = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+export const WEEKDAY_LETTER = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
+export const WEEKDAY_LONG = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche']
+
+type AnyRhythm = { kind: 'weekly'; days: number[]; everyWeeks: number } | { kind: 'interval'; everyDays: number }
+
+/** "Lun, Jeu · toutes les semaines", "Sam · toutes les 2 semaines", "Tous les 5 jours". */
+export function formatRhythm(r: AnyRhythm): string {
+  if (r.kind === 'interval') return r.everyDays === 1 ? 'Tous les jours' : `Tous les ${r.everyDays} jours`
+  if (r.days.length === 0) return 'Aucun jour choisi'
+  const days = [...r.days].sort((a, b) => a - b).map((d) => WEEKDAY_SHORT[d]).join(', ')
+  const period = r.everyWeeks === 1 ? 'toutes les semaines' : `toutes les ${r.everyWeeks} semaines`
+  return `${days} · ${period}`
+}
+
+export const EXPOSURE_LABELS = {
+  'direct-sun': 'Plein soleil',
+  'bright-indirect': 'Lumière vive indirecte',
+  'partial-shade': 'Mi-ombre',
+  shade: 'Ombre',
+} as const
+
+export const HUMIDITY_LABELS = { low: 'Faible', medium: 'Moyenne', high: 'Élevée' } as const
+
+/** Lower-case, accent-free text for forgiving search. */
+export const normalize = (s: string): string =>
+  s
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
