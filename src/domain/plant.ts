@@ -1,4 +1,6 @@
-import type { LocalDate, MonthDay } from './calendar.ts'
+import type { LocalDate, MonthDay, Weekday } from './calendar.ts'
+import { validateRhythm } from './rhythm.ts'
+import type { Rhythm } from './rhythm.ts'
 import type { PlantRhythms } from './season.ts'
 
 export type Household = {
@@ -42,3 +44,33 @@ export type Photo = { id: string; plantId: string; fileName: string; isMain: boo
 export type Watering = { id: string; plantId: string; occupantId: string; wateredAt: string; day: LocalDate }
 
 export type PushSubscription = { id: string; occupantId: string; endpoint: string; p256dh: string; auth: string }
+
+export type RhythmInput = { kind: 'weekly'; days: Weekday[]; everyWeeks: number } | { kind: 'interval'; everyDays: number }
+
+export type PlantInput = {
+  name: string
+  scientificName?: string | null
+  description?: string | null
+  care?: Care
+  roomId?: string | null
+  summerRhythm: RhythmInput
+  winterRhythm?: RhythmInput | null
+}
+
+/**
+ * Builds a rhythm from user input. A weekly rhythm is anchored on `today`, unless the previous
+ * rhythm had the same days and period: then its anchor is kept so the schedule does not shift.
+ */
+export function toRhythm(input: RhythmInput, previous: Rhythm | null, today: LocalDate): Rhythm {
+  if (input.kind === 'interval') return validateRhythm({ kind: 'interval', everyDays: input.everyDays })
+  const candidate = validateRhythm({ kind: 'weekly', days: input.days, everyWeeks: input.everyWeeks, anchor: today })
+  if (
+    candidate.kind === 'weekly' &&
+    previous?.kind === 'weekly' &&
+    previous.everyWeeks === candidate.everyWeeks &&
+    previous.days.join() === candidate.days.join()
+  ) {
+    return { ...candidate, anchor: previous.anchor }
+  }
+  return candidate
+}

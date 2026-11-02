@@ -12,3 +12,8 @@ export type HouseholdDto = {
   winterStart: string
   inviteCode: string
 }
+
+export type RoomDto = { id: string; name: string }
+
+export type { Care, Exposure, Humidity, PlantInput, RhythmInput } from '../domain/plant.ts'
+export type { Rhythm } from '../domain/rhythm.ts'
