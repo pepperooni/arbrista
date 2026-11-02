@@ -1,5 +1,5 @@
 import type { LocalDate } from '../domain/calendar.ts'
-import type { Household, Occupant, Photo, Plant, Room, Watering } from '../domain/plant.ts'
+import type { Household, Occupant, Photo, Plant, PushSubscription, Room, Watering } from '../domain/plant.ts'
 
 export interface Clock {
   now(): Date
@@ -65,4 +65,18 @@ export interface WateringRepository {
   onDay(day: LocalDate): Watering[]
   /** Newest first. */
   history(plantId: string, limit: number): Watering[]
+}
+
+export interface PushSubscriptionRepository {
+  /** Insert or replace, keyed by endpoint. */
+  upsert(s: PushSubscription): void
+  removeByEndpoint(endpoint: string): void
+  list(): PushSubscription[]
+}
+
+export type PushPayload = { title: string; body: string; url: string }
+export type PushResult = 'sent' | 'gone' | 'failed'
+
+export interface Notifier {
+  send(s: PushSubscription, payload: PushPayload): Promise<PushResult>
 }
