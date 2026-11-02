@@ -1,6 +1,7 @@
 import { openDatabase } from '../../src/infrastructure/sqlite/database.ts'
 import { createHouseholdRepository } from '../../src/infrastructure/sqlite/household-repo.ts'
 import { createOccupantRepository } from '../../src/infrastructure/sqlite/occupant-repo.ts'
+import { createPhotoRepository } from '../../src/infrastructure/sqlite/photo-repo.ts'
 import { createPlantRepository } from '../../src/infrastructure/sqlite/plant-repo.ts'
 import { createRoomRepository } from '../../src/infrastructure/sqlite/room-repo.ts'
 
@@ -10,6 +11,19 @@ export function createFakeClock(start: string) {
     now: () => new Date(current),
     set(iso: string) {
       current = new Date(iso)
+    },
+  }
+}
+
+export function createFakePhotoStorage() {
+  const files = new Map<string, Uint8Array>()
+  return {
+    files,
+    async write(fileName: string, data: Uint8Array) {
+      files.set(fileName, data)
+    },
+    async remove(fileName: string) {
+      files.delete(fileName)
     },
   }
 }
@@ -24,6 +38,8 @@ export function createTestContext(start = '2026-11-02T08:00:00Z') {
     occupants: createOccupantRepository(db),
     rooms: createRoomRepository(db),
     plants: createPlantRepository(db),
+    photos: createPhotoRepository(db),
+    photoStorage: createFakePhotoStorage(),
   }
   return { db, clock, deps }
 }

@@ -1,4 +1,4 @@
-import type { Household, Occupant, Plant, Room } from '../domain/plant.ts'
+import type { Household, Occupant, Photo, Plant, Room } from '../domain/plant.ts'
 
 export interface Clock {
   now(): Date
@@ -33,4 +33,19 @@ export interface PlantRepository {
   get(id: string): Plant | null
   save(p: Plant): void
   remove(id: string): void
+}
+
+export interface PhotoRepository {
+  /** Oldest first. */
+  listByPlant(plantId: string): Photo[]
+  get(id: string): Photo | null
+  save(p: Photo): void
+  remove(id: string): void
+  /** plantId → file name of its main photo. */
+  mainFileNames(): Map<string, string>
+}
+
+export interface PhotoStorage {
+  write(fileName: string, data: Uint8Array): Promise<void>
+  remove(fileName: string): Promise<void>
 }

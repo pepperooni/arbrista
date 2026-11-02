@@ -4,12 +4,14 @@ import { NotFoundError, ValidationError } from '../domain/errors.ts'
 import { toRhythm } from '../domain/plant.ts'
 import type { Care, Household, Plant, PlantInput } from '../domain/plant.ts'
 import { requireName } from './household.ts'
-import type { Clock, HouseholdRepository, PlantRepository, RoomRepository } from './ports.ts'
+import type { Clock, HouseholdRepository, PhotoRepository, PhotoStorage, PlantRepository, RoomRepository } from './ports.ts'
 
 export type PlantDeps = {
   plants: PlantRepository
   rooms: RoomRepository
   households: HouseholdRepository
+  photos: PhotoRepository
+  photoStorage: PhotoStorage
   clock: Clock
 }
 
@@ -27,7 +29,7 @@ function cleanCare(care: Care = {}): Care {
 }
 
 export function makePlantUseCases(deps: PlantDeps) {
-  const { plants, rooms, households, clock } = deps
+  const { plants, rooms, households, photos, photoStorage, clock } = deps
 
   function household(): Household {
     const h = households.get()
@@ -74,6 +76,14 @@ export function makePlantUseCases(deps: PlantDeps) {
       const plant = build(input, requirePlant(id))
       plants.save(plant)
       return plant
+    },
+
+    /** Deletes the plant, its history and its photo files. */
+    async remove(id: string): Promise<void> {
+      requirePlant(id)
+      const files = photos.listByPlant(id).map((p) => p.fileName)
+      plants.remove(id)
+      await Promise.all(files.map((f) => photoStorage.remove(f)))
     },
   }
 }
