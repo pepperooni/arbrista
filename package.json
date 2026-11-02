@@ -9,8 +9,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "start": "node src/server/main.ts",
-    "dev:server": "node --watch src/server/main.ts",
+    "start": "node --disable-warning=ExperimentalWarning src/server/main.ts",
+    "dev:server": "node --disable-warning=ExperimentalWarning --watch src/server/main.ts",
     "dev:web": "vite",
     "build": "vite build",
     "check": "svelte-check --tsconfig ./web/tsconfig.json"
