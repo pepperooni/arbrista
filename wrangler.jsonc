@@ -30,6 +30,6 @@
   "triggers": { "crons": ["* * * * *"] },
   "vars": {
     // Contact sent to push services; Apple requires a real mailto: or https: URL.
-    "VAPID_SUBJECT": "mailto:admin@example.com"
+    "VAPID_SUBJECT": "https://arbrista.axel-roche24.workers.dev"
   }
 }

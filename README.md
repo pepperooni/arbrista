@@ -70,7 +70,7 @@ L'adresse obtenue est fixe, de la forme `https://arbrista.<ton-sous-domaine>.wor
 
 À chaque `git push` sur `main`, Cloudflare reconstruit et redéploie l'application.
 
-1. Dans `wrangler.jsonc`, remplace `VAPID_SUBJECT` par ton adresse (`mailto:toi@exemple.fr`) et pousse la modification. Apple refuse les adresses factices.
+1. Dans `wrangler.jsonc`, vérifie `VAPID_SUBJECT` : c'est le contact transmis aux services de notification (Apple, Google, Mozilla), jamais affiché aux utilisateurs. Mets l'URL de ton application (`https://…workers.dev`) ou une adresse `mailto:`. Apple refuse les valeurs factices.
 2. Dans le tableau de bord Cloudflare, va dans **Workers & Pages → Create → Import a repository**, puis choisis ce dépôt GitHub.
 3. Dans les réglages de build, renseigne **Build command** : `npm run build`. Garde la **Deploy command** par défaut : `npx wrangler deploy`.
 4. Lance le déploiement.
