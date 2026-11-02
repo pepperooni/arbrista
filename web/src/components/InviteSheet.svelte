@@ -17,9 +17,9 @@
   })
 
   async function share() {
-    const text = "Rejoins-moi sur Arrosoir pour suivre l'arrosage des plantes de la maison 🌿"
+    const text = "Rejoins-moi sur Arbrista pour suivre l'arrosage des plantes de la maison 🌿"
     try {
-      if (navigator.share) await navigator.share({ title: 'Arrosoir', text, url })
+      if (navigator.share) await navigator.share({ title: 'Arbrista', text, url })
       else {
         await navigator.clipboard.writeText(url)
         showToast('Lien copié')

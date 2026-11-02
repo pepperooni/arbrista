@@ -1,6 +1,6 @@
-# Arrosoir 🌿
+# Arbrista 🌿
 
-Arrosoir est une application mobile (PWA) pour suivre l'arrosage des plantes de la maison, à plusieurs.
+Arbrista est une application mobile (PWA) pour suivre l'arrosage des plantes de la maison, à plusieurs.
 
 - **Fiches plantes** : nom, nom scientifique, description, conseils (exposition, humidité, température…) et photos, dont une photo principale qui identifie la plante.
 - **Pièces** : chaque plante appartient au logement, et on peut la ranger dans une pièce.
@@ -39,8 +39,8 @@ Les tests couvrent le comportement métier : calcul des dates d'arrosage, saison
 ## Déploiement (Docker)
 
 ```bash
-docker build -t arrosoir .
-docker run -d --name arrosoir -p 3000:3000 -v arrosoir-data:/data arrosoir
+docker build -t arbrista .
+docker run -d --name arbrista -p 3000:3000 -v arbrista-data:/data arbrista
 ```
 
 | Variable | Défaut | Rôle |
@@ -51,7 +51,7 @@ docker run -d --name arrosoir -p 3000:3000 -v arrosoir-data:/data arrosoir
 
 - **HTTPS est obligatoire** pour les notifications et l'installation sur l'écran d'accueil. Placez un reverse proxy devant le conteneur (Caddy, Traefik, nginx…).
 - **iPhone** : les notifications ne fonctionnent qu'après « Partager → Sur l'écran d'accueil » (iOS 16.4 ou plus récent).
-- **Sauvegarde** : copiez le dossier de données (`arrosoir.db`, `photos/`, `vapid.json`). Si vous perdez `vapid.json`, chaque appareil devra réactiver ses notifications.
+- **Sauvegarde** : copiez le dossier de données (`arbrista.db`, `photos/`, `vapid.json`). Si vous perdez `vapid.json`, chaque appareil devra réactiver ses notifications.
 
 ## Déployer sur Cloudflare (gratuit)
 
@@ -64,7 +64,7 @@ L'application tourne aussi sur le plan gratuit de Cloudflare, sans serveur à g�
 | Photos | Workers KV |
 | Rappel quotidien | Cron Trigger (chaque minute) |
 
-L'adresse obtenue est fixe, de la forme `https://arrosoir.<ton-sous-domaine>.workers.dev`. Elle est en HTTPS, ce qui permet d'installer l'application et de recevoir les notifications.
+L'adresse obtenue est fixe, de la forme `https://arbrista.<ton-sous-domaine>.workers.dev`. Elle est en HTTPS, ce qui permet d'installer l'application et de recevoir les notifications.
 
 **Première mise en ligne** (une seule fois, depuis ton ordinateur) :
 
@@ -77,7 +77,7 @@ L'adresse obtenue est fixe, de la forme `https://arrosoir.<ton-sous-domaine>.wor
 2. Crée la base D1, puis copie l'identifiant affiché dans `wrangler.jsonc` (champ `database_id`) :
 
    ```bash
-   npx wrangler d1 create arrosoir
+   npx wrangler d1 create arbrista
    ```
 
 3. Crée l'espace de stockage des photos, puis copie l'identifiant affiché dans `wrangler.jsonc` (champ `id` de `PHOTOS`) :

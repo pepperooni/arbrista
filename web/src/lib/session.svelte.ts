@@ -1,6 +1,6 @@
 import type { OccupantDto } from '../../../src/shared/api-types.ts'
 
-const KEY = 'arrosoir.session'
+const KEY = 'arbrista.session'
 
 type Stored = { token: string; occupant: OccupantDto }
 

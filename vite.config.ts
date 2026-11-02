@@ -18,8 +18,8 @@ export default defineConfig({
       injectRegister: 'auto',
       injectManifest: { globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'] },
       manifest: {
-        name: 'Arrosoir',
-        short_name: 'Arrosoir',
+        name: 'Arbrista',
+        short_name: 'Arbrista',
         description: "Le suivi d'arrosage des plantes de la maison",
         lang: 'fr',
         theme_color: '#2f7d4f',

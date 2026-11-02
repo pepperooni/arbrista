@@ -163,9 +163,9 @@
         <input type="checkbox" class="switch" checked={subscribed} disabled={pushBusy} onchange={togglePush} />
       </label>
     {:else if support === 'needs-install'}
-      <p><strong>Installez Arrosoir pour recevoir les rappels.</strong></p>
+      <p><strong>Installez Arbrista pour recevoir les rappels.</strong></p>
       <p class="muted small">
-        Sur iPhone, ajoutez Arrosoir à l'écran d'accueil (Partager → Sur l'écran d'accueil), puis rouvrez l'application depuis son icône.
+        Sur iPhone, ajoutez Arbrista à l'écran d'accueil (Partager → Sur l'écran d'accueil), puis rouvrez l'application depuis son icône.
       </p>
     {:else}
       <p class="muted">Ce navigateur ne prend pas en charge les notifications. La session du jour reste visible dans l'onglet Aujourd'hui.</p>

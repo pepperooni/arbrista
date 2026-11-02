@@ -1,4 +1,4 @@
-# Arrosoir — Spécification de conception
+# Arbrista — Spécification de conception
 
 Date : 2026-11-02
 Statut : en relecture
@@ -207,7 +207,7 @@ Le reste est servi en statique depuis le build du front, avec repli sur `index.h
 
 - Un seul processus Node : API, photos, front statique, planificateur.
 - Variables : `PORT` (défaut 3000), `DATA_DIR` (défaut `./data`), `VAPID_SUBJECT` (mailto: ou URL, défaut `mailto:admin@localhost`).
-- `DATA_DIR` contient `arrosoir.db`, `photos/`, `vapid.json` ; la sauvegarde consiste à copier ce dossier.
+- `DATA_DIR` contient `arbrista.db`, `photos/`, `vapid.json` ; la sauvegarde consiste à copier ce dossier.
 - `Dockerfile` multi-étapes (build front + serveur, image d'exécution Node 22 slim) ; volume `/data`.
 - HTTPS requis pour Web Push et l'installation PWA (assuré par un reverse proxy, hors périmètre).
 

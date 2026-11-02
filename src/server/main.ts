@@ -22,7 +22,7 @@ const webDir = resolve(import.meta.dirname, '../../dist/web')
 mkdirSync(dataDir, { recursive: true })
 const vapid = await loadOrCreateVapidKeys(dataDir)
 const useCases = composeUseCases({
-  db: openDatabase(join(dataDir, 'arrosoir.db')),
+  db: openDatabase(join(dataDir, 'arbrista.db')),
   clock: systemClock,
   photoStorage: createFsPhotoStorage(photosDir),
   notifier: createWebPushNotifier(vapid, vapidSubject),
@@ -43,5 +43,5 @@ if (existsSync(join(webDir, 'index.html'))) {
   app.get('*', async (c) => c.html(await readFile(join(webDir, 'index.html'), 'utf8')))
 }
 
-serve({ fetch: app.fetch, port }, (info) => console.log(`Arrosoir prêt sur http://localhost:${info.port}`))
+serve({ fetch: app.fetch, port }, (info) => console.log(`Arbrista prêt sur http://localhost:${info.port}`))
 startScheduler(useCases.reminder)

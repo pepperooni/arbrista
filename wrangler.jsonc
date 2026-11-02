@@ -1,7 +1,7 @@
 // Cloudflare Workers deployment (free plan). See README, section « Déployer sur Cloudflare ».
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "arrosoir",
+  "name": "arbrista",
   "main": "src/worker/index.ts",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
@@ -13,8 +13,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "arrosoir",
-      // Replace with the id printed by: npx wrangler d1 create arrosoir
+      "database_name": "arbrista",
+      // Replace with the id printed by: npx wrangler d1 create arbrista
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "src/infrastructure/sqlite/migrations"
     }

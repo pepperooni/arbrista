@@ -15,7 +15,7 @@ registerRoute(new NavigationRoute(createHandlerBoundToURL('/index.html'), { deny
 type PushPayload = { title: string; body: string; url: string }
 
 self.addEventListener('push', (event) => {
-  const data: PushPayload = event.data?.json() ?? { title: 'Arrosoir', body: '', url: '/' }
+  const data: PushPayload = event.data?.json() ?? { title: 'Arbrista', body: '', url: '/' }
   event.waitUntil(
     self.registration.showNotification(data.title, {
       body: data.body,

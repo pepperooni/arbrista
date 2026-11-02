@@ -29,7 +29,7 @@
 
 <main class="welcome">
   <div class="logo" aria-hidden="true"><img src="/icon.svg" alt="" width="88" height="88" /></div>
-  <h1>Arrosoir</h1>
+  <h1>Arbrista</h1>
   <p class="muted tagline">Les plantes de la maison, arrosées au bon moment, sans y penser.</p>
 
   {#if initialized}
