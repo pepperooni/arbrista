@@ -66,7 +66,25 @@ L'application tourne aussi sur le plan gratuit de Cloudflare, sans serveur à g�
 
 L'adresse obtenue est fixe, de la forme `https://arbrista.<ton-sous-domaine>.workers.dev`. Elle est en HTTPS, ce qui permet d'installer l'application et de recevoir les notifications.
 
-**Première mise en ligne** (une seule fois, depuis ton ordinateur) :
+### Option A : déploiement automatique depuis GitHub (recommandé)
+
+À chaque `git push` sur `main`, Cloudflare reconstruit et redéploie l'application.
+
+1. Dans `wrangler.jsonc`, remplace `VAPID_SUBJECT` par ton adresse (`mailto:toi@exemple.fr`) et pousse la modification. Apple refuse les adresses factices.
+2. Dans le tableau de bord Cloudflare, va dans **Workers & Pages → Create → Import a repository**, puis choisis ce dépôt GitHub.
+3. Dans les réglages de build, renseigne :
+   - **Build command** : `npm run build`
+   - **Deploy command** : `npx wrangler deploy && npx wrangler d1 migrations apply arbrista --remote`
+4. Lance le déploiement.
+
+Rien d'autre n'est à faire à la main :
+- la base D1 et l'espace KV sont **créés automatiquement** au premier déploiement, puis réutilisés ;
+- les **clés de notification** sont générées au premier usage et conservées dans KV ;
+- le **cron** du rappel quotidien est déclaré dans `wrangler.jsonc`.
+
+Si le premier déploiement échoue sur la création de la base ou du KV (droits du jeton de build), crée-les une fois depuis ton ordinateur avec l'option B, puis relance le build.
+
+### Option B : déploiement depuis ton ordinateur
 
 1. Connecte-toi à ton compte Cloudflare :
 
@@ -74,61 +92,26 @@ L'adresse obtenue est fixe, de la forme `https://arbrista.<ton-sous-domaine>.wor
    npx wrangler login
    ```
 
-2. Crée la base D1, puis copie l'identifiant affiché dans `wrangler.jsonc` (champ `database_id`) :
-
-   ```bash
-   npx wrangler d1 create arbrista
-   ```
-
-3. Crée l'espace de stockage des photos, puis copie l'identifiant affiché dans `wrangler.jsonc` (champ `id` de `PHOTOS`) :
-
-   ```bash
-   npx wrangler kv namespace create PHOTOS
-   ```
-
-4. Remplace `VAPID_SUBJECT` dans `wrangler.jsonc` par ton adresse (`mailto:toi@exemple.fr`). Apple refuse les adresses factices.
-
-5. Génère les clés de notification :
-
-   ```bash
-   npm run vapid-keys
-   ```
-
-6. Enregistre-les comme secrets (colle la valeur correspondante quand c'est demandé) :
-
-   ```bash
-   npx wrangler secret put VAPID_PUBLIC_KEY
-   ```
-
-   ```bash
-   npx wrangler secret put VAPID_PRIVATE_KEY
-   ```
-
-7. Déploie :
+2. Déploie :
 
    ```bash
    npm run deploy:cf
    ```
 
-Pour chaque mise à jour, seule la dernière commande (`npm run deploy:cf`) est à relancer. Elle applique aussi les nouvelles migrations de base de données.
+Cette commande compile l'interface, déploie le Worker (en créant la base D1 et le KV la première fois), puis applique les migrations de base de données. Relance-la à chaque mise à jour.
 
-**Ne régénère jamais les clés VAPID** après la mise en service. Sinon, chaque téléphone devra réactiver ses notifications.
+### Bon à savoir
+
+- **Clés de notification fournies par toi (facultatif)** : si tu préfères les gérer comme secrets, génère-les avec `npm run vapid-keys`, puis enregistre `VAPID_PUBLIC_KEY` et `VAPID_PRIVATE_KEY` avec `npx wrangler secret put` ou dans le tableau de bord. Les secrets passent alors avant les clés stockées dans KV.
+- **Ne change jamais les clés** une fois l'application en service. Sinon, chaque téléphone devra réactiver ses notifications.
 
 **Tester la version Cloudflare en local**, avec une base, un stockage et un cron simulés :
 
-1. Crée un fichier `.dev.vars` contenant les clés :
+```bash
+npm run dev:cf
+```
 
-   ```bash
-   npm run vapid-keys > .dev.vars
-   ```
-
-2. Lance l'application :
-
-   ```bash
-   npm run dev:cf
-   ```
-
-Elle répond sur http://localhost:8787.
+L'application répond sur http://localhost:8787.
 
 ## Architecture
 

@@ -14,16 +14,14 @@
     {
       "binding": "DB",
       "database_name": "arbrista",
-      // Replace with the id printed by: npx wrangler d1 create arbrista
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      // No id: Wrangler creates the database on the first deploy and reuses it afterwards.
       "migrations_dir": "src/infrastructure/sqlite/migrations"
     }
   ],
   "kv_namespaces": [
     {
-      "binding": "PHOTOS",
-      // Replace with the id printed by: npx wrangler kv namespace create PHOTOS
-      "id": "00000000000000000000000000000000"
+      // No id: Wrangler creates the namespace on the first deploy and reuses it afterwards.
+      "binding": "PHOTOS"
     }
   ],
   "triggers": { "crons": ["* * * * *"] },
