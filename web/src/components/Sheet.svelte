@@ -1,7 +1,12 @@
 <script lang="ts">
   import type { Snippet } from 'svelte'
 
-  let { open = $bindable(false), title, children }: { open?: boolean; title: string; children: Snippet } = $props()
+  let {
+    open = $bindable(false),
+    title,
+    onclose,
+    children,
+  }: { open?: boolean; title: string; onclose?: () => void; children: Snippet } = $props()
 
   let dialog: HTMLDialogElement
 
@@ -13,7 +18,10 @@
 
 <dialog
   bind:this={dialog}
-  onclose={() => (open = false)}
+  onclose={() => {
+    open = false
+    onclose?.()
+  }}
   onclick={(e) => e.target === dialog && (open = false)}
   aria-label={title}
 >
