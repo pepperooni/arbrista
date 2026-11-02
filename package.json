@@ -10,13 +10,25 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "start": "node src/server/main.ts",
-    "dev:server": "node --watch src/server/main.ts"
+    "dev:server": "node --watch src/server/main.ts",
+    "dev:web": "vite",
+    "build": "vite build",
+    "check": "svelte-check --tsconfig ./web/tsconfig.json"
   },
   "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@types/node": "^26.6.6",
     "@types/web-push": "^3.6.4",
-    "typescript": "^7.0.2",
-    "vitest": "^5.0.5"
+    "svelte": "^5.57.3",
+    "svelte-check": "^4.7.8",
+    "typescript": "^6.0.3",
+    "vite": "^8.3.5",
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.5",
+    "workbox-core": "^7.4.1",
+    "workbox-precaching": "^7.4.1",
+    "workbox-routing": "^7.4.1",
+    "workbox-window": "^7.4.1"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.6",

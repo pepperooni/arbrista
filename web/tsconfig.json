@@ -1,0 +1,8 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["svelte", "vite/client", "vite-plugin-pwa/client"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable", "WebWorker"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.svelte", "../src/shared/**/*.ts", "../src/domain/**/*.ts"]
+}
