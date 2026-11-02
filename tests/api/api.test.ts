@@ -95,3 +95,11 @@ it("a removed occupant's token is rejected", async () => {
   expect(removed.status).toBe(204)
   expect((await app.request('/api/session/today', { headers: auth(tom.token) })).status).toBe(401)
 })
+
+it('a new device claims a code without being signed in, then uses the API as the same occupant', async () => {
+  const lea = await post('/api/setup', { householdName: 'Maison', occupantName: 'Léa' })
+  const { code } = await post('/api/devices/code', {}, lea.token)
+  const phone = await post('/api/devices/claim', { code })
+  expect(phone.occupant.id).toBe(lea.occupant.id)
+  expect((await get('/api/occupants', phone.token)).map((o: { name: string }) => o.name)).toEqual(['Léa'])
+})

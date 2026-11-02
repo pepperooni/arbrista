@@ -11,6 +11,14 @@ const DEFAULTS = { sessionTime: '18:00', timezone: 'Europe/Paris', summerStart: 
 
 export const hashToken = (token: string): string => createHash('sha256').update(token).digest('hex')
 const newInviteCode = (): string => randomBytes(10).toString('base64url')
+const newToken = (): string => randomBytes(32).toString('base64url')
+
+// Device codes are typed by hand: no ambiguous characters (0/O, 1/I/L).
+const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+const CODE_LENGTH = 8
+const DEVICE_CODE_TTL_MS = 15 * 60_000
+const newDeviceCode = (): string => Array.from(randomBytes(CODE_LENGTH), (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join('')
+const normalizeCode = (typed: string): string => typed.toUpperCase().replace(/[^A-Z0-9]/g, '')
 
 export function requireName(value: string, label: string, max: number): string {
   const name = value.trim()
@@ -44,7 +52,7 @@ export function makeHouseholdUseCases(deps: { households: HouseholdRepository; o
       createdAt: clock.now().toISOString(),
       removedAt: null,
     }
-    const token = randomBytes(32).toString('base64url')
+    const token = newToken()
     await occupants.add(occupant, hashToken(token))
     return { token, occupant }
   }
@@ -96,6 +104,24 @@ export function makeHouseholdUseCases(deps: { households: HouseholdRepository; o
 
     listOccupants(): Promise<Occupant[]> {
       return occupants.listActive()
+    },
+
+    /** A short code that signs another device in as this occupant (15 min, single use). */
+    async createDeviceCode(occupantId: string): Promise<{ code: string; expiresAt: string }> {
+      const code = newDeviceCode()
+      const expiresAt = new Date(clock.now().getTime() + DEVICE_CODE_TTL_MS).toISOString()
+      await occupants.saveDeviceCode(occupantId, hashToken(code), expiresAt)
+      return { code, expiresAt }
+    },
+
+    async claimDeviceCode(typedCode: string): Promise<AuthResult> {
+      const now = clock.now().toISOString()
+      const occupantId = await occupants.consumeDeviceCode(hashToken(normalizeCode(typedCode)), now)
+      const occupant = occupantId ? await occupants.get(occupantId) : null
+      if (!occupant || occupant.removedAt) throw new NotFoundError('Code invalide ou expiré, générez-en un nouveau')
+      const token = newToken()
+      await occupants.addSession(occupant.id, hashToken(token), now)
+      return { token, occupant }
     },
 
     async removeOccupant(id: string): Promise<void> {

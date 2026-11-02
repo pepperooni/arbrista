@@ -10,6 +10,37 @@
   let occupantName = $state('')
   let error = $state('')
   let busy = $state(false)
+  let deviceCode = $state('')
+  let codeError = $state('')
+  let invite = $state('')
+  let inviteError = $state('')
+
+  /** Signs this device in as an existing occupant, with a code shown on an already signed-in device. */
+  async function claim(e: SubmitEvent) {
+    e.preventDefault()
+    busy = true
+    codeError = ''
+    try {
+      const auth = await api.post<AuthDto>('/devices/claim', { code: deviceCode })
+      signIn(auth.token, auth.occupant)
+      navigate('/', { replace: true })
+    } catch (err) {
+      codeError = errorMessage(err)
+    } finally {
+      busy = false
+    }
+  }
+
+  /** Accepts a pasted invitation link (…/join/<code>) or the bare code. */
+  function openInvite(e: SubmitEvent) {
+    e.preventDefault()
+    const code = invite.trim().match(/\/join\/([^/?#\s]+)/)?.[1] ?? invite.trim()
+    if (!/^[\w-]{6,}$/.test(code)) {
+      inviteError = "Ce lien d'invitation n'est pas reconnu"
+      return
+    }
+    navigate(`/join/${encodeURIComponent(code)}`)
+  }
 
   async function create(e: SubmitEvent) {
     e.preventDefault()
@@ -33,10 +64,38 @@
   <p class="muted tagline">Les plantes de la maison, arrosées au bon moment, sans y penser.</p>
 
   {#if initialized}
-    <div class="card info">
-      <h2>Rejoindre le logement</h2>
-      <p class="muted">Demandez à un occupant de vous envoyer le lien d'invitation depuis l'onglet <strong>Logement</strong>, puis ouvrez-le sur ce téléphone.</p>
-    </div>
+    <form class="card stack form" onsubmit={claim}>
+      <h2>Déjà membre du logement ?</h2>
+      <p class="muted small">
+        Sur un appareil où vous êtes connecté, ouvrez <strong>Logement → Connecter un autre appareil</strong> et saisissez le code ici.
+      </p>
+      <label class="field">
+        <span>Code de connexion</span>
+        <input
+          class="input code"
+          bind:value={deviceCode}
+          placeholder="ABCD-EFGH"
+          required
+          maxlength="12"
+          autocomplete="one-time-code"
+          autocapitalize="characters"
+          spellcheck="false"
+        />
+      </label>
+      {#if codeError}<p class="error" role="alert">{codeError}</p>{/if}
+      <button class="btn btn-primary btn-block" disabled={busy}>Se connecter</button>
+    </form>
+
+    <form class="card stack form" onsubmit={openInvite}>
+      <h2>Nouvel occupant ?</h2>
+      <p class="muted small">Collez le lien d'invitation reçu d'un occupant (onglet <strong>Logement → Inviter</strong>).</p>
+      <label class="field">
+        <span>Lien d'invitation</span>
+        <input class="input" bind:value={invite} placeholder="https://…/join/…" required autocomplete="off" spellcheck="false" />
+      </label>
+      {#if inviteError}<p class="error" role="alert">{inviteError}</p>{/if}
+      <button class="btn btn-block">Rejoindre le logement</button>
+    </form>
   {:else}
     <form class="card stack form" onsubmit={create}>
       <h2>Créer votre logement</h2>
@@ -77,19 +136,27 @@
     margin: var(--space-2) 0 var(--space-6);
   }
 
-  .form,
-  .info {
+  .form {
     padding: var(--space-5) var(--space-4);
     text-align: left;
+    margin-bottom: var(--space-4);
+  }
+
+  .small {
+    font-size: 0.92rem;
+  }
+
+  .code {
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
 
   h2 {
     font-size: 1.15rem;
   }
 
-  .info h2 {
-    margin-bottom: var(--space-2);
-  }
 
   .error {
     color: var(--danger);

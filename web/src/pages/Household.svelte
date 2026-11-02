@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { HouseholdDto, OccupantDto, RoomDto } from '../../../src/shared/api-types.ts'
   import Icon from '../components/Icon.svelte'
+  import DeviceCodeSheet from '../components/DeviceCodeSheet.svelte'
   import InviteSheet from '../components/InviteSheet.svelte'
   import Sheet from '../components/Sheet.svelte'
   import { api, errorMessage } from '../lib/api.ts'
@@ -16,6 +17,7 @@
   let roomToDelete = $state<RoomDto | null>(null)
   let occupantToRemove = $state<OccupantDto | null>(null)
   let inviteOpen = $state(false)
+  let deviceOpen = $state(false)
   let support = pushSupport()
   let subscribed = $state(false)
   let pushBusy = $state(false)
@@ -138,7 +140,7 @@
     {#each occupants as o (o.id)}
       <div class="row">
         <span class="avatar" aria-hidden="true">{o.name.slice(0, 1).toUpperCase()}</span>
-        <span class="grow">{o.name}{#if o.id === session.occupant?.id}<span class="muted"> · vous</span>{/if}</span>
+        <span class="grow"><span>{o.name}{#if o.id === session.occupant?.id}<span class="muted">{' · vous'}</span>{/if}</span></span>
         {#if o.id !== session.occupant?.id}
           <button class="icon-btn" aria-label="Retirer {o.name}" onclick={() => (occupantToRemove = o)}><Icon name="x" size={18} /></button>
         {/if}
@@ -148,6 +150,9 @@
       <button class="btn btn-primary btn-block" onclick={() => (inviteOpen = true)} disabled={!household}>
         <Icon name="users" size={20} /> Inviter un occupant
       </button>
+    </div>
+    <div class="row">
+      <button class="btn btn-block" onclick={() => (deviceOpen = true)}>Connecter un autre appareil</button>
     </div>
   </section>
 
@@ -164,9 +169,12 @@
       </label>
     {:else if support === 'needs-install'}
       <p><strong>Installez Arbrista pour recevoir les rappels.</strong></p>
-      <p class="muted small">
-        Sur iPhone, ajoutez Arbrista à l'écran d'accueil (Partager → Sur l'écran d'accueil), puis rouvrez l'application depuis son icône.
-      </p>
+      <ol class="muted small steps">
+        <li>Ajoutez Arbrista à l'écran d'accueil (Partager → Sur l'écran d'accueil).</li>
+        <li>Ouvrez l'application depuis son icône : elle ne partage pas la connexion de Safari.</li>
+        <li>Saisissez-y le code de connexion ci-dessous pour retrouver votre compte.</li>
+      </ol>
+      <button class="btn btn-primary btn-block install-code" onclick={() => (deviceOpen = true)}>Afficher un code de connexion</button>
     {:else}
       <p class="muted">Ce navigateur ne prend pas en charge les notifications. La session du jour reste visible dans l'onglet Aujourd'hui.</p>
     {/if}
@@ -213,6 +221,8 @@
     <InviteSheet bind:open={inviteOpen} bind:inviteCode={household.inviteCode} />
   {/if}
 </main>
+
+<DeviceCodeSheet bind:open={deviceOpen} />
 
 <Sheet open={roomToDelete !== null} onclose={() => (roomToDelete = null)} title="Supprimer « {roomToDelete?.name} » ?">
   <p class="muted">Les plantes de cette pièce seront rattachées au logement.</p>
@@ -331,6 +341,14 @@
     display: grid;
     grid-template-columns: 88px 1fr;
     gap: var(--space-2);
+  }
+
+  .steps {
+    margin: var(--space-2) 0 var(--space-3);
+    padding-left: 1.2em;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 
   .danger {

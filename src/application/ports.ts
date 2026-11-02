@@ -14,13 +14,19 @@ export interface HouseholdRepository {
 }
 
 export interface OccupantRepository {
+  /** Creates the occupant together with a first device session. */
   add(o: Occupant, tokenHash: string): Promise<void>
   get(id: string): Promise<Occupant | null>
-  /** Active occupants only. */
+  /** Signs one more device in for an existing occupant. */
+  addSession(occupantId: string, tokenHash: string, at: string): Promise<void>
+  /** The active occupant owning this device session, if any. */
   findByTokenHash(hash: string): Promise<Occupant | null>
   listActive(): Promise<Occupant[]>
-  /** Sets removed_at, clears the token and deletes the occupant's push subscriptions. */
+  /** Sets removed_at and deletes the occupant's device sessions, device codes and push subscriptions. */
   markRemoved(id: string, at: string): Promise<void>
+  saveDeviceCode(occupantId: string, codeHash: string, expiresAt: string): Promise<void>
+  /** Deletes the code and returns its occupant if it was still valid at `nowIso` (single use, atomic). */
+  consumeDeviceCode(codeHash: string, nowIso: string): Promise<string | null>
 }
 
 export interface RoomRepository {

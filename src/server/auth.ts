@@ -4,7 +4,7 @@ import type { UseCases } from './compose.ts'
 
 export type AppEnv = { Variables: { occupant: Occupant } }
 
-const PUBLIC_ROUTES = [/^GET \/api\/setup$/, /^POST \/api\/setup$/, /^POST \/api\/join\/[^/]+$/]
+const PUBLIC_ROUTES = [/^GET \/api\/setup$/, /^POST \/api\/setup$/, /^POST \/api\/join\/[^/]+$/, /^POST \/api\/devices\/claim$/]
 
 export function authMiddleware(useCases: UseCases) {
   return createMiddleware<AppEnv>(async (c, next) => {

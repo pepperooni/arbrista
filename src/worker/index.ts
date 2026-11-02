@@ -5,6 +5,7 @@ import { createD1Database } from '../infrastructure/sqlite/d1.ts'
 import { migrateD1 } from '../infrastructure/sqlite/d1-migrate.ts'
 import type { D1Migratable } from '../infrastructure/sqlite/d1-migrate.ts'
 import init0001 from '../infrastructure/sqlite/migrations/0001_init.sql'
+import deviceSessions0002 from '../infrastructure/sqlite/migrations/0002_device_sessions.sql'
 import type { D1Like } from '../infrastructure/sqlite/d1.ts'
 import { createKvPhotoStorage } from '../infrastructure/kv-photo-storage.ts'
 import type { KvLike } from '../infrastructure/kv-photo-storage.ts'
@@ -32,7 +33,10 @@ async function vapidKeys(env: Env): Promise<VapidKeys> {
 }
 
 // New migrations go here, in order (files in src/infrastructure/sqlite/migrations).
-const MIGRATIONS = [{ name: '0001_init.sql', sql: init0001 }]
+const MIGRATIONS = [
+  { name: '0001_init.sql', sql: init0001 },
+  { name: '0002_device_sessions.sql', sql: deviceSessions0002 },
+]
 
 // Each isolate makes sure the schema is up to date once, before serving: a plain
 // `wrangler deploy` (e.g. from a Git-connected build) is then enough.

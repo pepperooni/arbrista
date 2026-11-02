@@ -41,4 +41,6 @@ export const pushSubscriptionSchema = v.object({
   keys: v.object({ p256dh: v.string(), auth: v.string() }),
 })
 
+export const deviceCodeSchema = v.object({ code: text(20) })
+
 export const endpointSchema = v.object({ endpoint: v.string() })

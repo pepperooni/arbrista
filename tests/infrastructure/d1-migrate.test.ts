@@ -67,3 +67,15 @@ it('is idempotent, including when two isolates migrate at the same time', async 
   await migrateD1(d1, [init])
   expect(d1.db.prepare('SELECT count(*) AS n FROM d1_migrations').get()).toEqual({ n: 1 })
 })
+
+it('keeps existing sign-ins when moving to multi-device sessions (0002)', async () => {
+  const d1 = fakeD1()
+  await migrateD1(d1, [init])
+  d1.db.prepare("INSERT INTO occupant (id, name, token_hash, created_at) VALUES ('o1', 'Axel', 'hash-1', '2026-11-02T16:40:00Z')").run()
+  const sessions = {
+    name: '0002_device_sessions.sql',
+    sql: readFileSync(new URL('../../src/infrastructure/sqlite/migrations/0002_device_sessions.sql', import.meta.url), 'utf8'),
+  }
+  await migrateD1(d1, [init, sessions])
+  expect(d1.db.prepare('SELECT token_hash, occupant_id FROM device_session').all()).toEqual([{ token_hash: 'hash-1', occupant_id: 'o1' }])
+})

@@ -3,6 +3,7 @@ import { authMiddleware } from './auth.ts'
 import type { AppEnv } from './auth.ts'
 import type { UseCases } from './compose.ts'
 import { errorResponse } from './errors.ts'
+import { deviceRoutes } from './routes/devices.ts'
 import { householdRoutes } from './routes/household.ts'
 import { photoRoutes } from './routes/photos.ts'
 import { plantRoutes } from './routes/plants.ts'
@@ -20,6 +21,7 @@ export function createApp(useCases: UseCases, options: { vapidPublicKey: string 
     .use(authMiddleware(useCases))
     .route('/', setupRoutes(useCases))
     .route('/', householdRoutes(useCases))
+    .route('/', deviceRoutes(useCases))
     .route('/', roomRoutes(useCases))
     .route('/', plantRoutes(useCases))
     .route('/', photoRoutes(useCases))
