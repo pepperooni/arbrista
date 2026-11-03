@@ -138,8 +138,8 @@
       <section class="card block">
         <h2 class="block-title"><Icon name="calendar" size={18} /> Rythme</h2>
         {#if plant.winterRhythm}
-          <p><span class="muted">Été :</span> {formatRhythm(plant.summerRhythm)}</p>
-          <p><span class="muted">Hiver :</span> {formatRhythm(plant.winterRhythm)}</p>
+          <p><span class="muted">Été :</span> {formatRhythm(plant.summerRhythm)}</p>
+          <p><span class="muted">Hiver :</span> {formatRhythm(plant.winterRhythm)}</p>
         {:else}
           <p>{formatRhythm(plant.summerRhythm)}</p>
         {/if}
@@ -149,7 +149,7 @@
         <section class="card block">
           <h2 class="block-title"><Icon name="sprout" size={18} /> Entretien</h2>
           <CareChips care={plant.care} />
-          {#if plant.care.watering}<p><span class="muted">Arrosage :</span> {plant.care.watering}</p>{/if}
+          {#if plant.care.watering}<p><span class="muted">Arrosage :</span> {plant.care.watering}</p>{/if}
           {#if plant.care.notes}<p class="pre">{plant.care.notes}</p>{/if}
         </section>
       {/if}
@@ -179,7 +179,7 @@
   </div>
 </main>
 
-<Sheet bind:open={confirmDelete} title="Supprimer {plant?.name ?? 'la plante'} ?">
+<Sheet bind:open={confirmDelete} title="Supprimer {plant?.name ?? 'la plante'} ?">
   <p class="muted">Ses photos et son historique d'arrosage seront définitivement supprimés.</p>
   <button class="btn btn-block delete" onclick={remove}>Supprimer</button>
   <button class="btn btn-ghost btn-block" onclick={() => (confirmDelete = false)}>Annuler</button>

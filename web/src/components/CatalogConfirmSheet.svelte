@@ -23,7 +23,7 @@
   })
 </script>
 
-<Sheet open={plant !== null} onclose={oncancel} title="Est-ce bien cette plante ?">
+<Sheet open={plant !== null} onclose={oncancel} title="Est-ce bien cette plante ?">
   {#if plant}
     <div class="head">
       <strong>{plant.name}</strong>
@@ -42,7 +42,7 @@
         {/each}
       </div>
       <p class="credit">
-        Photos : Wikimedia Commons, via <a href={photos.pageUrl} target="_blank" rel="noopener">Wikipédia</a>. Il peut s'agir d'une
+        Photos : Wikimedia Commons, via <a href={photos.pageUrl} target="_blank" rel="noopener">Wikipédia</a>. Il peut s'agir d'une
         variété voisine.
       </p>
     {:else}

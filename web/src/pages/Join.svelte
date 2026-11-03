@@ -28,7 +28,7 @@
 
 <main class="join">
   <img src="/icon.svg" alt="" width="72" height="72" />
-  <h1>Bienvenue !</h1>
+  <h1>Bienvenue !</h1>
   <p class="muted">Vous avez été invité à suivre l'arrosage des plantes du logement.</p>
 
   {#if session.occupant}

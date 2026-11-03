@@ -139,7 +139,7 @@
 {#snippet nextEntry()}
   {#if data?.nextEntry}
     <p class="muted next">
-      Prochaine plante : <strong>{data.nextEntry.plantName}</strong>, {formatDay(data.nextEntry.date, data.date)}
+      Prochaine plante : <strong>{data.nextEntry.plantName}</strong>, {formatDay(data.nextEntry.date, data.date)}
     </p>
   {/if}
 {/snippet}

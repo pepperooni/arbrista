@@ -28,7 +28,7 @@
       added = [...added, src]
       showToast('Image ajoutée aux photos de la plante')
     } catch (e) {
-      showToast(`Impossible de récupérer cette image : ${errorMessage(e)}`)
+      showToast(`Impossible de récupérer cette image : ${errorMessage(e)}`)
     } finally {
       busy = null
     }
@@ -41,11 +41,11 @@
       <Icon name="sprout" size={20} /> Utiliser une image de la bibliothèque
     </button>
   {:else if photos === 'loading'}
-    <p class="muted small" aria-busy="true">Recherche des images de « {plant.name} »…</p>
+    <p class="muted small" aria-busy="true">Recherche des images de « {plant.name} »…</p>
   {:else if photos === null || photos.images.length === 0}
-    <p class="muted small">Aucune image disponible pour « {plant.name} ».</p>
+    <p class="muted small">Aucune image disponible pour « {plant.name} ».</p>
   {:else}
-    <p class="muted small">Touchez une image de « {plant.name} » pour l'utiliser comme photo de la plante :</p>
+    <p class="muted small">Touchez une image de « {plant.name} » pour l'utiliser comme photo de la plante :</p>
     <div class="row" role="group" aria-label="Images de la bibliothèque">
       {#each photos.images as src, i (src)}
         <button
@@ -62,7 +62,7 @@
         </button>
       {/each}
     </div>
-    <p class="credit">Images : Wikimedia Commons, via <a href={photos.pageUrl} target="_blank" rel="noopener">Wikipédia</a>.</p>
+    <p class="credit">Images : Wikimedia Commons, via <a href={photos.pageUrl} target="_blank" rel="noopener">Wikipédia</a>.</p>
   {/if}
 </div>
 

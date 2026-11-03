@@ -105,7 +105,7 @@
     const photo = photoToAdd
     photoToAdd = null
     await addPhotoBlob(photo)
-    showToast("Plante absente de la bibliothèque : complétez l'entretien vous-même")
+    showToast("Plante absente de la bibliothèque : complétez l'entretien vous-même")
   }
 
   /** Confirmed library plant: fills empty fields, always applies the watering rhythms. */
@@ -205,7 +205,7 @@
         {/if}
         {#if fromLibrary}
           <p class="muted hint filled" role="status">
-            Fiche complétée avec « {fromLibrary} ». Les rythmes sont indicatifs : ajustez-les selon votre intérieur.
+            Fiche complétée avec « {fromLibrary} ». Les rythmes sont indicatifs : ajustez-les selon votre intérieur.
           </p>
         {/if}
       </section>

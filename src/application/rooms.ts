@@ -10,7 +10,7 @@ export function makeRoomUseCases(deps: { rooms: RoomRepository }) {
   async function checkName(raw: string, exceptId?: string): Promise<string> {
     const name = requireName(raw, 'Le nom de la pièce', 40)
     const existing = await rooms.findByName(name)
-    if (existing && existing.id !== exceptId) throw new ValidationError(`La pièce « ${name} » existe déjà`)
+    if (existing && existing.id !== exceptId) throw new ValidationError(`La pièce « ${name} » existe déjà`)
     return name
   }
 

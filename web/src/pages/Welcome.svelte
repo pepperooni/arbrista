@@ -65,7 +65,7 @@
 
   {#if initialized}
     <form class="card stack form" onsubmit={claim}>
-      <h2>Déjà membre du logement ?</h2>
+      <h2>Déjà membre du logement ?</h2>
       <p class="muted small">
         Sur un appareil où vous êtes connecté, ouvrez <strong>Logement → Connecter un autre appareil</strong> et saisissez le code ici.
       </p>
@@ -87,7 +87,7 @@
     </form>
 
     <form class="card stack form" onsubmit={openInvite}>
-      <h2>Nouvel occupant ?</h2>
+      <h2>Nouvel occupant ?</h2>
       <p class="muted small">Collez le lien d'invitation reçu d'un occupant (onglet <strong>Logement → Inviter</strong>).</p>
       <label class="field">
         <span>Lien d'invitation</span>

@@ -27,7 +27,7 @@
 
 <Sheet bind:open title="Connecter un autre appareil">
   <p class="muted">
-    Sur l'autre appareil, ouvrez Arbrista et saisissez ce code dans <strong>Déjà membre du logement ?</strong>. Vous y serez connecté avec
+    Sur l'autre appareil, ouvrez Arbrista et saisissez ce code dans <strong>Déjà membre du logement ?</strong>. Vous y serez connecté avec
     votre prénom et votre historique.
   </p>
   {#if code}
@@ -39,7 +39,7 @@
     <p class="code loading" aria-busy="true">····-····</p>
   {/if}
   <p class="muted small">
-    Sur iPhone, l'application ajoutée à l'écran d'accueil ne partage pas la connexion de Safari : utilisez ce code pour vous y connecter.
+    Sur iPhone, l'application ajoutée à l'écran d'accueil ne partage pas la connexion de Safari : utilisez ce code pour vous y connecter.
   </p>
   <button class="btn btn-ghost btn-block" onclick={generate}>Nouveau code</button>
 </Sheet>

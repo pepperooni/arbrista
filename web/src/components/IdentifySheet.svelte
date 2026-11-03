@@ -60,7 +60,7 @@
   {:else if candidates.length === 0}
     <p class="muted">Aucune plante reconnue. Essayez une photo plus nette, centrée sur une feuille ou une fleur.</p>
   {:else}
-    <p class="muted small">Touchez la bonne plante :</p>
+    <p class="muted small">Touchez la bonne plante :</p>
     <ul class="candidates">
       {#each candidates as c (c.scientificName)}
         <li>

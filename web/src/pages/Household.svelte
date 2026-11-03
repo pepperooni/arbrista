@@ -22,7 +22,7 @@
   api
     .get<{ available: boolean }>('/identify')
     .then((r) => (identifyStatus = r.available ? 'Activée' : 'Non configurée (clé PLANTNET_API_KEY absente)'))
-    .catch((e) => (identifyStatus = `Erreur : ${errorMessage(e)}`))
+    .catch((e) => (identifyStatus = `Erreur : ${errorMessage(e)}`))
   let support = pushSupport()
   let subscribed = $state(false)
   let pushBusy = $state(false)
@@ -71,7 +71,7 @@
   function deleteRoom() {
     const room = roomToDelete
     roomToDelete = null
-    if (room) run(() => api.del(`/rooms/${room.id}`), `Pièce « ${room.name} » supprimée`)
+    if (room) run(() => api.del(`/rooms/${room.id}`), `Pièce « ${room.name} » supprimée`)
   }
 
   function removeOccupant() {
@@ -176,7 +176,7 @@
       <p><strong>Installez Arbrista pour recevoir les rappels.</strong></p>
       <ol class="muted small steps">
         <li>Ajoutez Arbrista à l'écran d'accueil (Partager → Sur l'écran d'accueil).</li>
-        <li>Ouvrez l'application depuis son icône : elle ne partage pas la connexion de Safari.</li>
+        <li>Ouvrez l'application depuis son icône : elle ne partage pas la connexion de Safari.</li>
         <li>Saisissez-y le code de connexion ci-dessous pour retrouver votre compte.</li>
       </ol>
       <button class="btn btn-primary btn-block install-code" onclick={() => (deviceOpen = true)}>Afficher un code de connexion</button>
@@ -224,7 +224,7 @@
       <label class="switch-row">
         <span class="grow">
           <strong>Regrouper les arrosages</strong>
-          <span class="muted small">Ajoute les plantes à la file un peu avant leur date idéale (selon leur rythme), pour tout arroser en une fois. Désactivé : une plante n'entre dans la file que le jour où elle est due.</span>
+          <span class="muted small">Ajoute les plantes à la file un peu avant leur date idéale (selon leur rythme), pour tout arroser en une fois. Désactivé : une plante n'entre dans la file que le jour où elle est due.</span>
         </span>
         <input
           type="checkbox"
@@ -247,13 +247,13 @@
 
 <DeviceCodeSheet bind:open={deviceOpen} />
 
-<Sheet open={roomToDelete !== null} onclose={() => (roomToDelete = null)} title="Supprimer « {roomToDelete?.name} » ?">
+<Sheet open={roomToDelete !== null} onclose={() => (roomToDelete = null)} title="Supprimer « {roomToDelete?.name} » ?">
   <p class="muted">Les plantes de cette pièce seront rattachées au logement.</p>
   <button class="btn btn-block danger" onclick={deleteRoom}>Supprimer</button>
   <button class="btn btn-ghost btn-block" onclick={() => (roomToDelete = null)}>Annuler</button>
 </Sheet>
 
-<Sheet open={occupantToRemove !== null} onclose={() => (occupantToRemove = null)} title="Retirer {occupantToRemove?.name} ?">
+<Sheet open={occupantToRemove !== null} onclose={() => (occupantToRemove = null)} title="Retirer {occupantToRemove?.name} ?">
   <p class="muted">Cette personne n'aura plus accès au logement. Ses arrosages restent dans l'historique.</p>
   <button class="btn btn-block danger" onclick={removeOccupant}>Retirer</button>
   <button class="btn btn-ghost btn-block" onclick={() => (occupantToRemove = null)}>Annuler</button>
