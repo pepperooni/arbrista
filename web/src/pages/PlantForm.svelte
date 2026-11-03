@@ -4,6 +4,9 @@
   import type { CatalogPlant } from '../../../src/shared/plant-catalog.ts'
   import CatalogConfirmSheet from '../components/CatalogConfirmSheet.svelte'
   import CatalogSearch from '../components/CatalogSearch.svelte'
+  import IdentifySheet from '../components/IdentifySheet.svelte'
+  import type { IdentifyCandidateDto } from '../../../src/shared/api-types.ts'
+  import { resizeImage } from '../lib/image.ts'
   import Icon from '../components/Icon.svelte'
   import PhotoManager from '../components/PhotoManager.svelte'
   import RhythmPicker from '../components/RhythmPicker.svelte'
@@ -39,9 +42,63 @@
   let careOpen = $state(false)
   // Re-creates the rhythm pickers so they show rhythms set from the library.
   let rhythmVersion = $state(0)
+  let identifyAvailable = $state(false)
+  let identifyPhoto = $state<Blob | null>(null)
+  let identifyInput = $state<HTMLInputElement>()
+  // Photo used for identification, added to the plant once the user confirms a candidate.
+  let photoToAdd: Blob | null = null
+
+  api
+    .get<{ available: boolean }>('/identify')
+    .then((r) => (identifyAvailable = r.available))
+    .catch(() => {})
+
+  async function pickIdentifyPhoto(e: Event) {
+    const file = (e.target as HTMLInputElement).files?.[0]
+    if (identifyInput) identifyInput.value = ''
+    if (!file) return
+    try {
+      identifyPhoto = await resizeImage(file)
+    } catch (err) {
+      showToast(errorMessage(err))
+    }
+  }
+
+  async function addIdentifiedPhoto(blob: Blob | null) {
+    if (!blob) return
+    if (id) {
+      try {
+        photos = [...photos, await api.upload<PhotoDto>(`/plants/${id}/photos`, blob)]
+      } catch (err) {
+        showToast(errorMessage(err))
+      }
+    } else {
+      pending = [...pending, { blob, url: URL.createObjectURL(blob) }]
+    }
+  }
+
+  /** A candidate from photo identification: confirm it through the library when known there. */
+  async function chooseIdentified(c: IdentifyCandidateDto, keepPhoto: boolean) {
+    photoToAdd = keepPhoto ? identifyPhoto : null
+    identifyPhoto = null
+    if (c.catalogId) {
+      const { PLANT_CATALOG } = await import('../../../src/shared/plant-catalog.ts')
+      candidate = PLANT_CATALOG.find((p) => p.id === c.catalogId) ?? null
+      if (candidate) return
+    }
+    if (!name.trim()) name = c.commonName ?? c.scientificName
+    if (!scientificName.trim()) scientificName = c.scientificName
+    const photo = photoToAdd
+    photoToAdd = null
+    await addIdentifiedPhoto(photo)
+    showToast("Plante absente de la bibliothèque : complétez l'entretien vous-même")
+  }
 
   /** Confirmed library plant: fills empty fields, always applies the watering rhythms. */
   async function applyLibrary(p: CatalogPlant) {
+    // Taken before closing the sheet: closing it runs the cancel handler, which drops the photo.
+    const photo = photoToAdd
+    photoToAdd = null
     candidate = null
     const { fillFromCatalog } = await import('../../../src/shared/catalog.ts')
     const filled = fillFromCatalog(
@@ -58,6 +115,7 @@
     rhythmVersion++
     careOpen = true
     fromLibrary = p.name
+    await addIdentifiedPhoto(photo)
   }
 
   api.get<RoomDto[]>('/rooms').then((r) => (rooms = r)).catch(() => {})
@@ -125,6 +183,12 @@
     <form class="stack" onsubmit={save}>
       <section class="library">
         <CatalogSearch onpick={(p) => (candidate = p)} />
+        {#if identifyAvailable}
+          <button type="button" class="btn btn-block identify" onclick={() => identifyInput?.click()}>
+            <Icon name="camera" size={20} /> Identifier avec une photo
+          </button>
+          <input bind:this={identifyInput} type="file" accept="image/*" hidden onchange={pickIdentifyPhoto} />
+        {/if}
         {#if fromLibrary}
           <p class="muted hint filled" role="status">
             Fiche complétée avec « {fromLibrary} ». Les rythmes sont indicatifs : ajustez-les selon votre intérieur.
@@ -225,7 +289,15 @@
   {/if}
 </main>
 
-<CatalogConfirmSheet plant={candidate} onconfirm={applyLibrary} oncancel={() => (candidate = null)} />
+<CatalogConfirmSheet
+  plant={candidate}
+  onconfirm={applyLibrary}
+  oncancel={() => {
+    candidate = null
+    photoToAdd = null
+  }}
+/>
+<IdentifySheet photo={identifyPhoto} onchoose={chooseIdentified} onclose={() => (identifyPhoto = null)} />
 
 <style>
   details {
@@ -281,6 +353,10 @@
 
   textarea.short {
     min-height: 64px;
+  }
+
+  .identify {
+    margin-top: var(--space-3);
   }
 
   .filled {

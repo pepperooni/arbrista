@@ -16,7 +16,10 @@
   })
 </script>
 
+<!-- autofocus on the dialog itself: focusing the first link or button would show a focus ring on open -->
+<!-- svelte-ignore a11y_autofocus -->
 <dialog
+  autofocus
   bind:this={dialog}
   onclose={() => {
     open = false

@@ -5,6 +5,7 @@ import type { UseCases } from './compose.ts'
 import { errorResponse } from './errors.ts'
 import { deviceRoutes } from './routes/devices.ts'
 import { householdRoutes } from './routes/household.ts'
+import { identifyRoutes } from './routes/identify.ts'
 import { photoRoutes } from './routes/photos.ts'
 import { plantRoutes } from './routes/plants.ts'
 import { pushRoutes } from './routes/push.ts'
@@ -25,6 +26,7 @@ export function createApp(useCases: UseCases, options: { vapidPublicKey: string 
     .route('/', roomRoutes(useCases))
     .route('/', plantRoutes(useCases))
     .route('/', photoRoutes(useCases))
+    .route('/', identifyRoutes(useCases))
     .route('/', sessionRoutes(useCases))
     .route('/', pushRoutes(useCases, options.vapidPublicKey))
     .all('*', (c) => c.json({ error: 'Route inconnue' }, 404))

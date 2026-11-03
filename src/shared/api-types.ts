@@ -60,3 +60,12 @@ export type PlantDetailDto = PlantSummaryDto & {
   photos: PhotoDto[]
   history: WateringDto[]
 }
+
+export type IdentifyCandidateDto = {
+  scientificName: string
+  commonName: string | null
+  /** Confidence between 0 and 1. */
+  score: number
+  catalogId: string | null
+  matchedBy: 'species' | 'genus' | null
+}

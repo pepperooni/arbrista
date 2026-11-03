@@ -92,3 +92,10 @@ export type PushResult = 'sent' | 'gone' | 'failed'
 export interface Notifier {
   send(s: PushSubscription, payload: PushPayload): Promise<PushResult>
 }
+
+export type IdentifiedSpecies = { scientificName: string; genus: string; family: string; commonNames: string[]; score: number }
+
+/** Recognises a plant from photos; resolves [] when nothing is recognised. */
+export interface PlantIdentifier {
+  identify(images: { data: Uint8Array; mimeType: string }[]): Promise<IdentifiedSpecies[]>
+}

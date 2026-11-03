@@ -3,6 +3,7 @@
 Arbrista est une application mobile (PWA) pour suivre l'arrosage des plantes de la maison, à plusieurs.
 
 - **Fiches plantes** : nom, nom scientifique, description, conseils (exposition, humidité, température…) et photos, dont une photo principale qui identifie la plante.
+- **Identification par photo** (facultatif) : une photo de la plante, et [Pl@ntNet](https://plantnet.org) propose les espèces les plus probables, reliées à la bibliothèque.
 - **Bibliothèque de plantes** : environ 140 plantes d'intérieur courantes. On en choisit une, on confirme sur photos (Wikimedia Commons), et la fiche se remplit : description, exposition, humidité, température, conseils, rythmes d'arrosage été/hiver.
 - **Pièces** : chaque plante appartient au logement, et on peut la ranger dans une pièce.
 - **Rythmes d'arrosage** : jours fixes (par ex. lundi et jeudi, toutes les N semaines) ou « tous les N jours après le dernier arrosage ». Un rythme d'hiver distinct est possible.
@@ -49,6 +50,7 @@ docker run -d --name arbrista -p 3000:3000 -v arbrista-data:/data arbrista
 | `PORT` | `3000` | Port HTTP |
 | `DATA_DIR` | `./data` (`/data` dans l'image) | Base SQLite, photos et clés de notification |
 | `VAPID_SUBJECT` | `mailto:admin@localhost` | Contact transmis aux services de notification. Mettez votre adresse. |
+| `PLANTNET_API_KEY` | (aucune) | Active l'identification par photo ([Pl@ntNet](https://my.plantnet.org)) |
 
 - **HTTPS est obligatoire** pour les notifications et l'installation sur l'écran d'accueil. Placez un reverse proxy devant le conteneur (Caddy, Traefik, nginx…).
 - **iPhone** : les notifications ne fonctionnent qu'après « Partager → Sur l'écran d'accueil » (iOS 16.4 ou plus récent).
@@ -99,6 +101,19 @@ Si le premier déploiement échoue sur la création de la base ou du KV (droits 
    ```
 
 Cette commande compile l'interface et déploie le Worker. La première fois, elle crée aussi la base D1 et le KV. Relance-la à chaque mise à jour.
+
+### Activer l'identification par photo (facultatif)
+
+L'identification utilise l'API de [Pl@ntNet](https://my.plantnet.org), gratuite jusqu'à 500 identifications par jour.
+
+1. Crée un compte sur [my.plantnet.org](https://my.plantnet.org) et copie ta clé API (« API key »).
+2. Enregistre-la comme secret du Worker. Dans le tableau de bord : **Workers & Pages → arbrista → Settings → Variables and Secrets → Add**, type **Secret**, nom `PLANTNET_API_KEY`. Ou en ligne de commande :
+
+   ```bash
+   npx wrangler secret put PLANTNET_API_KEY
+   ```
+
+Le bouton « Identifier avec une photo » apparaît alors dans le formulaire des plantes. Sans clé, il reste masqué. En auto-hébergement, définis la variable d'environnement `PLANTNET_API_KEY`.
 
 ### Bon à savoir
 

@@ -5,6 +5,7 @@ import { join, resolve } from 'node:path'
 import { serve } from '@hono/node-server'
 import { serveStatic } from '@hono/node-server/serve-static'
 import { createFsPhotoStorage } from '../infrastructure/fs-photo-storage.ts'
+import { createPlantNetIdentifier } from '../infrastructure/plantnet-identifier.ts'
 import { openDatabase } from '../infrastructure/sqlite/database.ts'
 import { systemClock } from '../infrastructure/system-clock.ts'
 import { loadOrCreateVapidKeys } from '../infrastructure/vapid-file.ts'
@@ -26,6 +27,7 @@ const useCases = composeUseCases({
   clock: systemClock,
   photoStorage: createFsPhotoStorage(photosDir),
   notifier: createWebPushNotifier(vapid, vapidSubject),
+  identifier: process.env.PLANTNET_API_KEY ? createPlantNetIdentifier(process.env.PLANTNET_API_KEY) : null,
 })
 
 const app = createApp(useCases, { vapidPublicKey: vapid.publicKey })

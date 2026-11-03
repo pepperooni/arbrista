@@ -44,9 +44,9 @@ export const api = {
   post: <T>(path: string, body?: unknown) => request<T>('POST', path, body ?? {}),
   patch: <T>(path: string, body: unknown) => request<T>('PATCH', path, body),
   del: (path: string, body?: unknown) => request<void>('DELETE', path, body),
-  upload: <T>(path: string, file: Blob, name = 'photo.jpg') => {
+  upload: <T>(path: string, file: Blob, name = 'photo.jpg', field = 'file') => {
     const form = new FormData()
-    form.set('file', file, name)
+    form.set(field, file, name)
     return request<T>('POST', path, form)
   },
 }

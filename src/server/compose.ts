@@ -1,7 +1,8 @@
 import { makeHouseholdUseCases } from '../application/household.ts'
+import { makeIdentifyUseCases } from '../application/identify.ts'
 import { makePhotoUseCases } from '../application/photos.ts'
 import { makePlantUseCases } from '../application/plants.ts'
-import type { Clock, Notifier, PhotoStorage } from '../application/ports.ts'
+import type { Clock, Notifier, PhotoStorage, PlantIdentifier } from '../application/ports.ts'
 import { makeReminderUseCases } from '../application/reminder.ts'
 import { makeRoomUseCases } from '../application/rooms.ts'
 import { makeWateringUseCases } from '../application/watering.ts'
@@ -14,10 +15,10 @@ import { createRoomRepository } from '../infrastructure/sqlite/room-repo.ts'
 import type { SqlDatabase } from '../infrastructure/sqlite/sql.ts'
 import { createWateringRepository } from '../infrastructure/sqlite/watering-repo.ts'
 
-export type Deps = { db: SqlDatabase; clock: Clock; photoStorage: PhotoStorage; notifier: Notifier }
+export type Deps = { db: SqlDatabase; clock: Clock; photoStorage: PhotoStorage; notifier: Notifier; identifier?: PlantIdentifier | null }
 
 /** Composition root: wires SQLite repositories and outside-world adapters into the use cases. */
-export function composeUseCases({ db, clock, photoStorage, notifier }: Deps) {
+export function composeUseCases({ db, clock, photoStorage, notifier, identifier = null }: Deps) {
   const repos = {
     households: createHouseholdRepository(db),
     occupants: createOccupantRepository(db),
@@ -36,6 +37,7 @@ export function composeUseCases({ db, clock, photoStorage, notifier }: Deps) {
     photos: makePhotoUseCases(all),
     watering,
     reminder: makeReminderUseCases({ ...all, watering }),
+    identify: makeIdentifyUseCases({ identifier }),
   }
 }
 

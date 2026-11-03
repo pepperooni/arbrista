@@ -8,6 +8,7 @@ import init0001 from '../infrastructure/sqlite/migrations/0001_init.sql'
 import deviceSessions0002 from '../infrastructure/sqlite/migrations/0002_device_sessions.sql'
 import type { D1Like } from '../infrastructure/sqlite/d1.ts'
 import { createKvPhotoStorage } from '../infrastructure/kv-photo-storage.ts'
+import { createPlantNetIdentifier } from '../infrastructure/plantnet-identifier.ts'
 import type { KvLike } from '../infrastructure/kv-photo-storage.ts'
 import { systemClock } from '../infrastructure/system-clock.ts'
 import type { VapidKeys } from '../infrastructure/vapid.ts'
@@ -23,6 +24,8 @@ export type Env = {
   VAPID_PUBLIC_KEY?: string
   VAPID_PRIVATE_KEY?: string
   VAPID_SUBJECT: string
+  /** Optional secret enabling photo identification (Pl@ntNet, free up to 500 a day). */
+  PLANTNET_API_KEY?: string
 }
 
 type ExecutionContext = { waitUntil(promise: Promise<unknown>): void }
@@ -63,6 +66,7 @@ async function wire(env: Env) {
     clock: systemClock,
     photoStorage: createKvPhotoStorage(env.PHOTOS),
     notifier: createWebPushNotifier(vapid, env.VAPID_SUBJECT),
+    identifier: env.PLANTNET_API_KEY ? createPlantNetIdentifier(env.PLANTNET_API_KEY) : null,
   })
   return { useCases, vapid }
 }

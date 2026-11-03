@@ -103,3 +103,9 @@ it('a new device claims a code without being signed in, then uses the API as the
   expect(phone.occupant.id).toBe(lea.occupant.id)
   expect((await get('/api/occupants', phone.token)).map((o: { name: string }) => o.name)).toEqual(['Léa'])
 })
+
+it('says whether photo identification is available, to signed-in occupants only', async () => {
+  const lea = await post('/api/setup', { householdName: 'Maison', occupantName: 'Léa' })
+  expect((await app.request('/api/identify')).status).toBe(401)
+  expect(await get('/api/identify', lea.token)).toEqual({ available: false })
+})

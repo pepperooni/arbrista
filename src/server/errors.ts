@@ -1,11 +1,12 @@
 import type { Context } from 'hono'
 import * as v from 'valibot'
-import { DomainError, NotFoundError, UnauthorizedError, ValidationError } from '../domain/errors.ts'
+import { DomainError, NotFoundError, ServiceUnavailableError, UnauthorizedError, ValidationError } from '../domain/errors.ts'
 
 export function errorResponse(err: Error, c: Context) {
   if (err instanceof ValidationError) return c.json({ error: err.message }, 400)
   if (err instanceof NotFoundError) return c.json({ error: err.message }, 404)
   if (err instanceof UnauthorizedError) return c.json({ error: err.message }, 401)
+  if (err instanceof ServiceUnavailableError) return c.json({ error: err.message }, 503)
   if (err instanceof DomainError) return c.json({ error: err.message }, 400)
   console.error(err)
   return c.json({ error: 'Erreur interne' }, 500)

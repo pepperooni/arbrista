@@ -87,3 +87,34 @@ export function wikiTitles(p: CatalogPlant): string[] {
   ]
   return [...new Set(candidates.filter((t): t is string => !!t && !/\bspp?\.$/.test(t)).map((t) => t.replace(/\s+/g, ' ').trim()))]
 }
+
+/** "Genus species" in lower case, without author, cultivar, hybrid sign or variety. */
+function binomial(name: string): string {
+  return normalize(name.replace(/[‘'"].*?[’'"]/g, '').replace(/×/g, ' '))
+    .split(' ')
+    .slice(0, 2)
+    .join(' ')
+}
+
+const genusOf = (p: CatalogPlant): string => normalize(p.scientificName).split(' ')[0]
+const isGenusEntry = (p: CatalogPlant): boolean => /\bspp?\.\s*$/.test(p.scientificName)
+
+/**
+ * Library entry for an identified species: same species (scientific name or a synonym listed
+ * among the other names), otherwise the genus when it designates a single entry.
+ */
+export function matchCatalog(
+  scientificName: string,
+  genus: string,
+  catalog: CatalogPlant[] = PLANT_CATALOG,
+): { plant: CatalogPlant; by: 'species' | 'genus' } | null {
+  const target = binomial(scientificName)
+  const bySpecies = catalog.find(
+    (p) => !isGenusEntry(p) && (binomial(p.scientificName) === target || p.aliases.some((a) => binomial(a) === target)),
+  )
+  if (bySpecies) return { plant: bySpecies, by: 'species' }
+  const g = normalize(genus)
+  const sameGenus = catalog.filter((p) => genusOf(p) === g)
+  const genusEntry = sameGenus.find(isGenusEntry) ?? (sameGenus.length === 1 ? sameGenus[0] : undefined)
+  return genusEntry ? { plant: genusEntry, by: 'genus' } : null
+}

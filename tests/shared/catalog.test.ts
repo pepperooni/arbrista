@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fillFromCatalog, searchCatalog, wikiTitles } from '../../src/shared/catalog.ts'
+import { fillFromCatalog, matchCatalog, searchCatalog, wikiTitles } from '../../src/shared/catalog.ts'
 import type { PlantFormFields } from '../../src/shared/catalog.ts'
 import { PLANT_CATALOG } from '../../src/shared/plant-catalog.ts'
 import type { CatalogPlant } from '../../src/shared/plant-catalog.ts'
@@ -124,5 +124,28 @@ describe('finding photos of a library plant', () => {
       'Dracaena reflexa',
       'Dracaena',
     ])
+  })
+})
+
+describe('matching an identified species to the library', () => {
+  it('matches the exact species, ignoring author and case', () => {
+    expect(matchCatalog('Monstera deliciosa Liebm.', 'Monstera')).toMatchObject({ plant: { id: 'monstera' }, by: 'species' })
+  })
+
+  it('matches a scientific synonym listed among the other names', () => {
+    expect(matchCatalog('Sansevieria trifasciata', 'Sansevieria')).toMatchObject({ plant: { id: 'sansevieria' }, by: 'species' })
+  })
+
+  it('matches a cultivar or hybrid entry by its species', () => {
+    expect(matchCatalog('Alocasia amazonica', 'Alocasia')).toMatchObject({ plant: { id: 'alocasia-polly' }, by: 'species' })
+  })
+
+  it('falls back to the genus only when it designates a single library entry', () => {
+    expect(matchCatalog('Tillandsia ionantha', 'Tillandsia')).toMatchObject({ plant: { id: 'tillandsia' }, by: 'genus' })
+    expect(matchCatalog('Ficus carica', 'Ficus')).toBeNull()
+  })
+
+  it('returns null for a plant outside the library', () => {
+    expect(matchCatalog('Quercus robur', 'Quercus')).toBeNull()
   })
 })
