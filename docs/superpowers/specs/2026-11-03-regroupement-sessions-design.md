@@ -51,6 +51,11 @@ Toutes les dates sont des dates calendaires dans le fuseau du logement.
 
 **Fenêtre** : `[ouverture, échéance] = [dateIdéale − marge, dateIdéale + marge]`.
 
+Deux exceptions (ajoutées après relecture) :
+
+- **Plante jamais arrosée** : fenêtre réduite au jour même (marge 0). Sinon, sa date idéale étant « aujourd'hui » chaque jour, sa fenêtre glisserait sans jamais se fermer.
+- **Jours fixes arrosés en avance** : une occurrence dont la fenêtre contient déjà le dernier arrosage est consommée ; la date idéale suivante est cherchée après cette fenêtre (sinon la plante serait arrosée deux fois en deux jours).
+
 ## 3. Règles (remplacent R3)
 
 **G1 — Calcul sans les arrosages du jour.** Pour le jour J, chaque plante est évaluée à partir de son dernier arrosage **strictement antérieur à J** (comme R3 aujourd'hui) : commencer à arroser ne fait pas disparaître la session.
