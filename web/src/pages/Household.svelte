@@ -18,6 +18,11 @@
   let occupantToRemove = $state<OccupantDto | null>(null)
   let inviteOpen = $state(false)
   let deviceOpen = $state(false)
+  let identifyStatus = $state('…')
+  api
+    .get<{ available: boolean }>('/identify')
+    .then((r) => (identifyStatus = r.available ? 'Activée' : 'Non configurée (clé PLANTNET_API_KEY absente)'))
+    .catch((e) => (identifyStatus = `Erreur : ${errorMessage(e)}`))
   let support = pushSupport()
   let subscribed = $state(false)
   let pushBusy = $state(false)
@@ -220,6 +225,12 @@
 
     <InviteSheet bind:open={inviteOpen} bind:inviteCode={household.inviteCode} />
   {/if}
+
+  <h2 class="section-title">À propos</h2>
+  <section class="card block about">
+    <p><span class="muted">Version de l'application</span><br />{__APP_BUILD__}</p>
+    <p><span class="muted">Identification par photo</span><br />{identifyStatus}</p>
+  </section>
 </main>
 
 <DeviceCodeSheet bind:open={deviceOpen} />
@@ -349,6 +360,13 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
+  }
+
+  .about {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    font-size: 0.92rem;
   }
 
   .danger {

@@ -1,9 +1,24 @@
+import { execSync } from 'node:child_process'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+/** Short commit of the build (Cloudflare Workers Builds sets WORKERS_CI_COMMIT_SHA). */
+function commit(): string {
+  const fromCi = process.env.WORKERS_CI_COMMIT_SHA
+  if (fromCi) return fromCi.slice(0, 7)
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim()
+  } catch {
+    return ''
+  }
+}
+
+const BUILD = `${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC${commit() ? ` · ${commit()}` : ''}`
+
 export default defineConfig({
   root: 'web',
+  define: { __APP_BUILD__: JSON.stringify(BUILD) },
   build: { outDir: '../dist/web', emptyOutDir: true },
   server: {
     proxy: { '/api': 'http://localhost:3000', '/photos': 'http://localhost:3000' },
