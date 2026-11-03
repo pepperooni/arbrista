@@ -5,6 +5,7 @@
   import CatalogConfirmSheet from '../components/CatalogConfirmSheet.svelte'
   import CatalogSearch from '../components/CatalogSearch.svelte'
   import IdentifySheet from '../components/IdentifySheet.svelte'
+  import LibraryPhotos from '../components/LibraryPhotos.svelte'
   import type { IdentifyCandidateDto } from '../../../src/shared/api-types.ts'
   import { resizeImage } from '../lib/image.ts'
   import Icon from '../components/Icon.svelte'
@@ -43,6 +44,21 @@
   // Re-creates the rhythm pickers so they show rhythms set from the library.
   let rhythmVersion = $state(0)
   let identifyAvailable = $state(false)
+  // Library plant matching the scientific name: its pictures can be used as photos.
+  let libraryMatch = $state<CatalogPlant | null>(null)
+  $effect(() => {
+    const sci = scientificName.trim()
+    if (!sci) {
+      libraryMatch = null
+      return
+    }
+    const timer = setTimeout(async () => {
+      const { matchCatalog } = await import('../../../src/shared/catalog.ts')
+      const match = matchCatalog(sci, sci.split(/\s+/)[0])
+      libraryMatch = match?.by === 'species' ? match.plant : null
+    }, 300)
+    return () => clearTimeout(timer)
+  })
   let identifyPhoto = $state<Blob | null>(null)
   let identifyInput = $state<HTMLInputElement>()
   // Photo used for identification, added to the plant once the user confirms a candidate.
@@ -64,17 +80,15 @@
     }
   }
 
-  async function addIdentifiedPhoto(blob: Blob | null) {
+  /** Uploads now when editing, or keeps it for after creation; throws if the upload fails. */
+  async function storePhoto(blob: Blob) {
+    if (id) photos = [...photos, await api.upload<PhotoDto>(`/plants/${id}/photos`, blob)]
+    else pending = [...pending, { blob, url: URL.createObjectURL(blob) }]
+  }
+
+  async function addPhotoBlob(blob: Blob | null) {
     if (!blob) return
-    if (id) {
-      try {
-        photos = [...photos, await api.upload<PhotoDto>(`/plants/${id}/photos`, blob)]
-      } catch (err) {
-        showToast(errorMessage(err))
-      }
-    } else {
-      pending = [...pending, { blob, url: URL.createObjectURL(blob) }]
-    }
+    await storePhoto(blob).catch((err) => showToast(errorMessage(err)))
   }
 
   /** A candidate from photo identification: confirm it through the library when known there. */
@@ -90,7 +104,7 @@
     if (!scientificName.trim()) scientificName = c.scientificName
     const photo = photoToAdd
     photoToAdd = null
-    await addIdentifiedPhoto(photo)
+    await addPhotoBlob(photo)
     showToast("Plante absente de la bibliothèque : complétez l'entretien vous-même")
   }
 
@@ -115,7 +129,7 @@
     rhythmVersion++
     careOpen = true
     fromLibrary = p.name
-    await addIdentifiedPhoto(photo)
+    await addPhotoBlob(photo)
   }
 
   api.get<RoomDto[]>('/rooms').then((r) => (rooms = r)).catch(() => {})
@@ -226,6 +240,11 @@
         <div class="content">
           <PhotoManager plantId={id ?? null} bind:photos bind:pending />
           <p class="muted hint">La photo marquée d'une étoile identifie la plante.</p>
+          {#if libraryMatch}
+            {#key libraryMatch.id}
+              <LibraryPhotos plant={libraryMatch} onadd={storePhoto} />
+            {/key}
+          {/if}
         </div>
       </details>
 

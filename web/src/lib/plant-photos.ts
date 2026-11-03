@@ -1,4 +1,6 @@
 import type { CatalogPlant } from '../../../src/shared/plant-catalog.ts'
+import { largerThumbnail } from '../../../src/shared/wikimedia.ts'
+import { resizeImage } from './image.ts'
 
 export type PlantPhotos = { images: string[]; pageUrl: string }
 
@@ -50,4 +52,22 @@ export function fetchPlantPhotos(p: CatalogPlant): Promise<PlantPhotos | null> {
     cache.set(p.id, pending)
   }
   return pending
+}
+
+async function fetchImage(src: string): Promise<Blob> {
+  const res = await fetch(src, { mode: 'cors', referrerPolicy: 'no-referrer' })
+  const blob = await res.blob()
+  if (!res.ok || !blob.type.startsWith('image/')) throw new Error(`Image indisponible (${res.status})`)
+  return blob
+}
+
+/** A library picture, downloaded in good resolution and resized like a photo taken with the phone. */
+export async function downloadLibraryPhoto(src: string): Promise<Blob> {
+  let blob: Blob
+  try {
+    blob = await fetchImage(largerThumbnail(src, 1600))
+  } catch {
+    blob = await fetchImage(src) // the original may be smaller than the requested rendition
+  }
+  return resizeImage(blob)
 }
