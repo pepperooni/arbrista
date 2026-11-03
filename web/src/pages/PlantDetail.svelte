@@ -119,6 +119,8 @@
             <span class="muted grouped">
               {#if plant.queueFrom <= today}
                 dans la file depuis {formatDay(plant.queueFrom, today)}
+              {:else if plant.queueFrom === plant.urgentFrom}
+                dans la file et urgente {formatDay(plant.queueFrom, today)}
               {:else}
                 dans la file dès {formatDay(plant.queueFrom, today)}, urgente {formatDay(plant.urgentFrom, today)}
               {/if}

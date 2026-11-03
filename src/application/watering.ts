@@ -59,7 +59,6 @@ export function makeWateringUseCases(deps: {
       await waterings.remove(wateringId)
     },
 
-    /** R3 — today's session, computed from the watering history. */
     /** Today's watering queue (F1–F5). */
     async today(): Promise<QueueDto> {
       const s = await loadSchedule(deps)

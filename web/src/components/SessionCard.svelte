@@ -65,7 +65,7 @@
     <div class="info">
       <strong>{item.name}</strong>
       {#if item.done}
-        <span class="muted small">Arrosée par {item.done.occupantName} · {formatTime(item.done.at)}</span>
+        <span class="muted small">Arrosée par {item.done.occupantName} · {formatTime(item.done.at)} · {item.roomName ?? 'Logement'}</span>
       {:else}
         <span class="meta">
           {#if item.daysOverdue > 0}

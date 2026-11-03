@@ -3,7 +3,7 @@
   const pct = $derived(total === 0 ? 0 : Math.round((done / total) * 100))
 </script>
 
-<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax={total} aria-valuenow={done} aria-label="Progression de la session">
+<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax={total} aria-valuenow={done} aria-label="Progression des arrosages du jour">
   <div class="fill" style:width="{pct}%"></div>
 </div>
 

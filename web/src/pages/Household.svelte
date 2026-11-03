@@ -168,7 +168,7 @@
       <label class="switch-row">
         <span class="grow">
           <strong>Notifications sur cet appareil</strong>
-          <span class="muted small">Un seul rappel par session, à {household?.sessionTime ?? '18:00'}.</span>
+          <span class="muted small">Au plus un rappel par jour, à {household?.sessionTime ?? '18:00'}, quand une plante ne peut plus attendre.</span>
         </span>
         <input type="checkbox" class="switch" checked={subscribed} disabled={pushBusy} onchange={togglePush} />
       </label>
@@ -181,7 +181,7 @@
       </ol>
       <button class="btn btn-primary btn-block install-code" onclick={() => (deviceOpen = true)}>Afficher un code de connexion</button>
     {:else}
-      <p class="muted">Ce navigateur ne prend pas en charge les notifications. La session du jour reste visible dans l'onglet Aujourd'hui.</p>
+      <p class="muted">Ce navigateur ne prend pas en charge les notifications. La file d'arrosage reste visible dans l'onglet À arroser.</p>
     {/if}
   </section>
 
@@ -194,7 +194,7 @@
         <input class="input" value={household.name} maxlength="60" onchange={(e) => updateSetting({ name: e.currentTarget.value })} />
       </label>
       <label class="field">
-        <span>Heure de la session d'arrosage</span>
+        <span>Heure du rappel</span>
         <input class="input" type="time" value={household.sessionTime} onchange={(e) => e.currentTarget.value && updateSetting({ sessionTime: e.currentTarget.value })} />
       </label>
       {#each [{ key: 'summerStart', label: "Début de l'été" }, { key: 'winterStart', label: "Début de l'hiver" }] as const as s (s.key)}
