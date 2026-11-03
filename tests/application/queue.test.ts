@@ -53,3 +53,29 @@ it('a plant never watered in the app is urgent the day it was added', async () =
   const q = await watering.today()
   expect(q.items.find((i) => i.name === 'Nouvelle')?.urgent).toBe(true)
 })
+
+it('no reminder while nothing is urgent, even with plants in the queue', async () => {
+  ctx.clock.set('2026-11-05T08:00:00Z')
+  await watering.water(e.id, lea) // E next ideal 11-08
+  ctx.clock.set('2026-11-06T17:00:00Z') // queue: A (window 11-06..11-08), not urgent
+  expect((await watering.today()).pending).toBe(1)
+  expect(await reminder.runIfDue()).toEqual({ notified: 0 })
+})
+
+it('reminds again the next day while an urgent plant is not watered', async () => {
+  ctx.clock.set('2026-11-05T17:00:00Z')
+  await reminder.runIfDue()
+  ctx.clock.set('2026-11-06T17:00:00Z')
+  await reminder.runIfDue()
+  expect(ctx.deps.notifier.sent.map((s) => s.payload.body)).toEqual([
+    'Le E ne peut plus attendre · 1 plante dans la file',
+    'Le E ne peut plus attendre · 2 plantes dans la file',
+  ])
+})
+
+it('no reminder once the urgent plant has been watered', async () => {
+  ctx.clock.set('2026-11-05T08:00:00Z')
+  await watering.water(e.id, lea)
+  ctx.clock.set('2026-11-05T17:00:00Z')
+  expect(await reminder.runIfDue()).toEqual({ notified: 0 })
+})

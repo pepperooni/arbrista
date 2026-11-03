@@ -3,7 +3,7 @@ import { createTestContext } from '../support/test-context.ts'
 import { makeHouseholdUseCases } from '../../src/application/household.ts'
 import { makePlantUseCases } from '../../src/application/plants.ts'
 import { makeWateringUseCases } from '../../src/application/watering.ts'
-import { makeReminderUseCases } from '../../src/application/reminder.ts'
+import { makeReminderUseCases, reminderPayload } from '../../src/application/reminder.ts'
 import type { Occupant, Plant } from '../../src/domain/plant.ts'
 
 let ctx: ReturnType<typeof createTestContext>
@@ -39,14 +39,14 @@ it('sends one grouped notification at session time, once per day', async () => {
   ctx.clock.set('2026-11-02T17:01:00Z')
   await reminder.runIfDue()
   expect(ctx.deps.notifier.sent).toEqual([
-    { endpoint: 'e1', payload: { title: "🌿 Session d'arrosage", body: "2 plantes à arroser aujourd'hui", url: '/' } },
+    { endpoint: 'e1', payload: { title: '🌿 Arrosage', body: 'Le Basilic et le Ficus ne peuvent plus attendre · 2 plantes dans la file', url: '/' } },
   ])
 })
 
 it('uses the singular for a single plant', async () => {
   ctx.clock.set('2026-11-02T17:00:00Z')
   await reminder.runIfDue()
-  expect(ctx.deps.notifier.sent[0].payload.body).toBe("1 plante à arroser aujourd'hui")
+  expect(ctx.deps.notifier.sent[0].payload.body).toBe('Le Ficus ne peut plus attendre · 1 plante dans la file')
 })
 
 it('catches up after a restart past session time', async () => {
@@ -113,3 +113,9 @@ it('settings changed while reminders are being sent are kept', async () => {
   await run
   expect(await household.getSettings()).toMatchObject({ sessionTime: '07:00', inviteCode: newCode, lastReminderDate: '2026-11-02' })
 })
+
+it.each([
+  [['Ficus'], 6, 'Le Ficus ne peut plus attendre · 6 plantes dans la file'],
+  [['Ficus', 'Basilic'], 6, 'Le Ficus et le Basilic ne peuvent plus attendre · 6 plantes dans la file'],
+  [['Ficus', 'Basilic', 'Pilea', 'Monstera'], 1, 'Le Ficus, le Basilic et 2 autres ne peuvent plus attendre · 1 plante dans la file'],
+])('reminder text %#', (names, size, body) => expect(reminderPayload(names, size)).toEqual({ title: '🌿 Arrosage', body, url: '/' }))
