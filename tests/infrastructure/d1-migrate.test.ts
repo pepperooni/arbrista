@@ -79,3 +79,12 @@ it('keeps existing sign-ins when moving to multi-device sessions (0002)', async 
   await migrateD1(d1, [init, sessions])
   expect(d1.db.prepare('SELECT token_hash, occupant_id FROM device_session').all()).toEqual([{ token_hash: 'hash-1', occupant_id: 'o1' }])
 })
+
+it('checking an up-to-date database costs a single query', async () => {
+  const d1 = fakeD1()
+  await migrateD1(d1, [init])
+  let prepared = 0
+  const counting = { ...d1, prepare: (sql: string) => (prepared++, d1.prepare(sql)) }
+  await migrateD1(counting, [init])
+  expect(prepared).toBe(1)
+})

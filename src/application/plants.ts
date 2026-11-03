@@ -16,7 +16,7 @@ import type {
   RoomRepository,
   WateringRepository,
 } from './ports.ts'
-import { occupantNames, photoUrl, toWateringDto } from './views.ts'
+import { photoUrl } from './views.ts'
 
 const HISTORY_LIMIT = 20
 
@@ -102,15 +102,16 @@ export function makePlantUseCases(deps: PlantDeps) {
     },
 
     async detail(id: string): Promise<PlantDetailDto> {
-      const p = await requirePlant(id)
-      const [h, lastDays, mains, plantPhotos, history] = await Promise.all([
+      // One round of parallel queries instead of fetching the plant first.
+      const [p, h, lastDays, mains, plantPhotos, history, names] = await Promise.all([
+        requirePlant(id),
         household(),
         waterings.lastDay(),
         photos.mainFileNames(),
         photos.listByPlant(id),
         waterings.history(id, HISTORY_LIMIT),
+        occupants.namesById(),
       ])
-      const nameOf = occupantNames(occupants)
       return {
         ...summarize(p, h, lastDays, mains),
         description: p.description,
@@ -118,7 +119,7 @@ export function makePlantUseCases(deps: PlantDeps) {
         summerRhythm: p.rhythms.summer,
         winterRhythm: p.rhythms.winter,
         photos: plantPhotos.map((ph) => ({ id: ph.id, url: photoUrl(ph.fileName), isMain: ph.isMain })),
-        history: await Promise.all(history.map((w) => toWateringDto(w, nameOf))),
+        history: history.map((w) => ({ id: w.id, plantId: w.plantId, occupantName: names.get(w.occupantId) ?? '?', at: w.wateredAt })),
       }
     },
 

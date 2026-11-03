@@ -27,9 +27,16 @@ export type Env = {
 
 type ExecutionContext = { waitUntil(promise: Promise<unknown>): void }
 
-async function vapidKeys(env: Env): Promise<VapidKeys> {
-  if (env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY) return { publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY }
-  return loadOrCreateVapidKeysInKv(env.PHOTOS)
+// Kept for the life of the isolate: no KV read on every request.
+let vapidCache: Promise<VapidKeys> | null = null
+function vapidKeys(env: Env): Promise<VapidKeys> {
+  if (env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY)
+    return Promise.resolve({ publicKey: env.VAPID_PUBLIC_KEY, privateKey: env.VAPID_PRIVATE_KEY })
+  vapidCache ??= loadOrCreateVapidKeysInKv(env.PHOTOS).catch((err) => {
+    vapidCache = null
+    throw err
+  })
+  return vapidCache
 }
 
 // New migrations go here, in order (files in src/infrastructure/sqlite/migrations).

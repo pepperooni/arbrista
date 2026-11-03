@@ -31,6 +31,9 @@ export function createOccupantRepository(db: SqlDatabase): OccupantRepository {
     async listActive() {
       return (await db.all<Row>('SELECT * FROM occupant WHERE removed_at IS NULL ORDER BY created_at, name')).map(toOccupant)
     },
+    async namesById() {
+      return new Map((await db.all<Row>('SELECT id, name FROM occupant')).map((r) => [r.id, r.name]))
+    },
     async markRemoved(id, at) {
       await db.run('UPDATE occupant SET removed_at = ?, token_hash = NULL WHERE id = ?', at, id)
       await db.run('DELETE FROM device_session WHERE occupant_id = ?', id)

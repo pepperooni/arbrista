@@ -22,6 +22,8 @@ export interface OccupantRepository {
   /** The active occupant owning this device session, if any. */
   findByTokenHash(hash: string): Promise<Occupant | null>
   listActive(): Promise<Occupant[]>
+  /** id → name for every occupant, removed ones included (history keeps their name). */
+  namesById(): Promise<Map<string, string>>
   /** Sets removed_at and deletes the occupant's device sessions, device codes and push subscriptions. */
   markRemoved(id: string, at: string): Promise<void>
   saveDeviceCode(occupantId: string, codeHash: string, expiresAt: string): Promise<void>

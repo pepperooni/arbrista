@@ -6,6 +6,7 @@
   import { api, errorMessage } from '../lib/api.ts'
   import { dueLabel, formatDay, formatDayTime, formatRhythm, localToday } from '../lib/format.ts'
   import { back, navigate } from '../lib/router.svelte.ts'
+  import { session } from '../lib/session.svelte.ts'
   import { showToast } from '../lib/toast.svelte.ts'
 
   let { id }: { id: string } = $props()
@@ -30,20 +31,32 @@
   const roomName = $derived(plant?.roomId ? (rooms.find((r) => r.id === plant!.roomId)?.name ?? 'Logement') : 'Logement')
   const hero = $derived(shown ?? plant?.photos.find((p) => p.isMain)?.url ?? null)
   const due = $derived(plant ? dueLabel(plant.nextDue, today) : null)
+  const localDay = (iso: string) => {
+    const d = new Date(iso)
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  }
+  const wateredToday = $derived(!!plant?.history[0] && localDay(plant.history[0].at) === today)
 
+  /** Optimistic: the screen reacts at once, the server confirms in the background. */
   async function waterNow() {
+    if (!plant || watering) return
+    const name = plant.name
+    const pending: WateringDto = { id: 'pending', plantId: id, occupantName: session.occupant?.name ?? 'vous', at: new Date().toISOString() }
+    plant.history = [pending, ...plant.history]
     watering = true
+    showToast(`${name} arrosée`)
     try {
       const w = await api.post<WateringDto>(`/plants/${id}/waterings`)
-      showToast(`${plant?.name} arrosée`, {
+      showToast(`${name} arrosée`, {
         label: 'Annuler',
         run: async () => {
           await api.del(`/waterings/${w.id}`).catch((e) => showToast(errorMessage(e)))
-          load()
+          await load()
         },
       })
-      await load()
+      await load() // refreshes the next due date
     } catch (e) {
+      if (plant) plant.history = plant.history.filter((h) => h !== pending)
       showToast(errorMessage(e))
     } finally {
       watering = false
@@ -99,10 +112,18 @@
       <section class="card next">
         <div>
           <span class="muted small">Prochain arrosage</span>
-          <strong>{formatDay(plant.nextDue, today)}</strong>
-          {#if due?.tone === 'warn'}<span class="badge badge-warn">{due.text}</span>{/if}
+          {#if wateredToday && plant.nextDue <= today}
+            <strong class="muted" aria-busy="true">…</strong>
+          {:else}
+            <strong>{formatDay(plant.nextDue, today)}</strong>
+          {/if}
+          {#if due?.tone === 'warn' && !wateredToday}<span class="badge badge-warn">{due.text}</span>{/if}
         </div>
-        <button class="btn btn-water" disabled={watering} onclick={waterNow}><Icon name="droplet" size={20} /> Arroser</button>
+        {#if wateredToday}
+          <span class="btn done" role="status"><Icon name="check" size={20} /> Arrosée</span>
+        {:else}
+          <button class="btn btn-water" onclick={waterNow}><Icon name="droplet" size={20} /> Arroser</button>
+        {/if}
       </section>
 
       <section class="card block">
@@ -300,6 +321,12 @@
   .history li {
     display: flex;
     justify-content: space-between;
+  }
+
+  .done {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    cursor: default;
   }
 
   .delete {

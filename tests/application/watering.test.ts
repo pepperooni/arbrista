@@ -28,7 +28,7 @@ it("a never-watered plant appears in today's session", async () => {
 })
 
 it('watering by one occupant marks it done for everybody', async () => {
-  await watering.water(ficus.id, tom.id)
+  await watering.water(ficus.id, tom)
   const s = await watering.today()
   expect(s.pending).toBe(0)
   expect(s.items[0].done?.occupantName).toBe('Tom')
@@ -36,40 +36,40 @@ it('watering by one occupant marks it done for everybody', async () => {
 })
 
 it('a double tap within a minute does not create two waterings', async () => {
-  const a = await watering.water(ficus.id, lea.id)
+  const a = await watering.water(ficus.id, lea)
   ctx.clock.set('2026-11-02T08:00:30Z')
-  const b = await watering.water(ficus.id, tom.id)
+  const b = await watering.water(ficus.id, tom)
   expect(b.id).toBe(a.id)
   expect((await plants.detail(ficus.id)).history).toHaveLength(1)
 })
 
 it('undo puts the plant back in the session', async () => {
-  const w = await watering.water(ficus.id, lea.id)
+  const w = await watering.water(ficus.id, lea)
   await watering.undo(w.id)
   expect((await watering.today()).pending).toBe(1)
 })
 
 it('the next due date follows the actual watering day', async () => {
   ctx.clock.set('2026-11-05T09:00:00Z')
-  await watering.water(ficus.id, lea.id)
+  await watering.water(ficus.id, lea)
   expect((await plants.detail(ficus.id)).nextDue).toBe('2026-11-12')
 })
 
 it("a removed occupant's waterings still show their name", async () => {
-  await watering.water(ficus.id, tom.id)
+  await watering.water(ficus.id, tom)
   await household.removeOccupant(tom.id)
   expect((await plants.detail(ficus.id)).history[0].occupantName).toBe('Tom')
 })
 
 it('a watering late in the evening counts for the household day, not the UTC day', async () => {
   ctx.clock.set('2026-11-02T23:30:00Z') // 00:30 on Tuesday in Paris
-  await watering.water(ficus.id, lea.id)
+  await watering.water(ficus.id, lea)
   expect((await watering.today()).date).toBe('2026-11-03')
   expect((await watering.today()).items[0].done?.occupantName).toBe('Léa')
 })
 
 it('two occupants tapping at the same time record a single watering', async () => {
-  const [a, b] = await Promise.all([watering.water(ficus.id, lea.id), watering.water(ficus.id, tom.id)])
+  const [a, b] = await Promise.all([watering.water(ficus.id, lea), watering.water(ficus.id, tom)])
   expect(b.id).toBe(a.id)
   expect((await plants.detail(ficus.id)).history).toHaveLength(1)
 })

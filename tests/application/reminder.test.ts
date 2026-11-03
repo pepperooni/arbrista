@@ -53,7 +53,7 @@ it('catches up after a restart past session time', async () => {
 })
 
 it('stays silent when the session is empty', async () => {
-  await watering.water(ficus.id, lea.id)
+  await watering.water(ficus.id, lea)
   ctx.clock.set('2026-11-02T17:00:00Z')
   await reminder.runIfDue()
   expect(ctx.deps.notifier.sent).toHaveLength(0)
