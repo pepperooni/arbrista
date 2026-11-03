@@ -36,8 +36,10 @@ export function plural(n: number, singular: string, pluralForm: string): string 
 }
 
 /** Relative due label for lists: "aujourd'hui", "dans 3 j", "en retard de 2 j". */
-export function dueLabel(nextDue: string, today: string): { text: string; tone: 'warn' | 'water' | 'muted' } {
+/** `daysOverdue` comes from the server: late only once the grouping margin is exceeded. */
+export function dueLabel(nextDue: string, today: string, daysOverdue = 0): { text: string; tone: 'warn' | 'water' | 'muted' } {
   const diff = diffDays(nextDue, today)
+  if (daysOverdue > 0) return { text: `en retard de ${daysOverdue} j`, tone: 'warn' }
   if (diff < 0) return { text: `en retard de ${-diff} j`, tone: 'warn' }
   if (diff === 0) return { text: "à arroser aujourd'hui", tone: 'water' }
   if (diff === 1) return { text: 'demain', tone: 'muted' }

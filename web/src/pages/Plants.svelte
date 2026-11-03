@@ -55,7 +55,7 @@
     {:else}
       <ul class="grid">
         {#each visible as plant (plant.id)}
-          {@const due = dueLabel(plant.nextDue, today)}
+          {@const due = dueLabel(plant.nextDue, today, plant.daysOverdue)}
           <li>
             <a href="/plants/{plant.id}" use:link class="tile card">
               {#if plant.mainPhotoUrl}

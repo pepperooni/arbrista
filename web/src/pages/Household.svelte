@@ -221,6 +221,18 @@
         </div>
       {/each}
       <p class="muted small">Le rythme d'hiver d'une plante s'applique du début de l'hiver jusqu'au début de l'été.</p>
+      <label class="switch-row">
+        <span class="grow">
+          <strong>Regrouper les arrosages</strong>
+          <span class="muted small">Avance ou retarde un peu certaines plantes, dans une marge adaptée à leur rythme, pour arroser moins souvent.</span>
+        </span>
+        <input
+          type="checkbox"
+          class="switch"
+          checked={household.groupWaterings}
+          onchange={(e) => updateSetting({ groupWaterings: e.currentTarget.checked })}
+        />
+      </label>
     </section>
 
     <InviteSheet bind:open={inviteOpen} bind:inviteCode={household.inviteCode} />

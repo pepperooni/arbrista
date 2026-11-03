@@ -68,6 +68,8 @@
         <span class="muted small">Arrosée par {item.done.occupantName} · {formatTime(item.done.at)}</span>
       {:else if item.daysOverdue > 0}
         <span class="badge badge-warn">en retard de {item.daysOverdue} j</span>
+      {:else if item.daysEarly > 0}
+        <span class="badge">en avance de {item.daysEarly} j</span>
       {:else}
         <span class="muted small">à arroser aujourd'hui</span>
       {/if}

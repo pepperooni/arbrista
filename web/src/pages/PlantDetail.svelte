@@ -30,7 +30,7 @@
 
   const roomName = $derived(plant?.roomId ? (rooms.find((r) => r.id === plant!.roomId)?.name ?? 'Logement') : 'Logement')
   const hero = $derived(shown ?? plant?.photos.find((p) => p.isMain)?.url ?? null)
-  const due = $derived(plant ? dueLabel(plant.nextDue, today) : null)
+  const due = $derived(plant ? dueLabel(plant.nextDue, today, plant.daysOverdue) : null)
   const localDay = (iso: string) => {
     const d = new Date(iso)
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -118,6 +118,9 @@
             <strong>{formatDay(plant.nextDue, today)}</strong>
           {/if}
           {#if due?.tone === 'warn' && !wateredToday}<span class="badge badge-warn">{due.text}</span>{/if}
+          {#if !wateredToday && plant.nextDue !== plant.idealDue}
+            <span class="muted grouped">Regroupé avec les autres plantes (idéalement {formatDay(plant.idealDue, today)})</span>
+          {/if}
         </div>
         {#if wateredToday}
           <span class="btn done" role="status"><Icon name="check" size={20} /> Arrosée</span>
@@ -285,6 +288,10 @@
   .next strong {
     font-size: 1.15rem;
     text-transform: capitalize;
+  }
+
+  .grouped {
+    font-size: 0.85rem;
   }
 
   .small {

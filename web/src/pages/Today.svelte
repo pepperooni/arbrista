@@ -99,7 +99,7 @@
     {#if data.total === 0}
       <div class="empty card">
         <div class="emoji">🌱</div>
-        <h2>Rien à arroser aujourd'hui</h2>
+        <h2>Pas de session aujourd'hui</h2>
         {@render nextSession()}
       </div>
     {:else}
