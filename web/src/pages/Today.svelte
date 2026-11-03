@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { SessionDto, SessionItemDto, WateringDto } from '../../../src/shared/api-types.ts'
+  import type { QueueDto, QueueItemDto, WateringDto } from '../../../src/shared/api-types.ts'
   import ProgressBar from '../components/ProgressBar.svelte'
   import SessionCard from '../components/SessionCard.svelte'
   import { api, errorMessage } from '../lib/api.ts'
@@ -7,12 +7,12 @@
   import { session as auth } from '../lib/session.svelte.ts'
   import { showToast } from '../lib/toast.svelte.ts'
 
-  let data = $state<SessionDto | null>(null)
+  let data = $state<QueueDto | null>(null)
   let error = $state('')
 
   async function load() {
     try {
-      data = await api.get<SessionDto>('/session/today')
+      data = await api.get<QueueDto>('/session/today')
       error = ''
     } catch (e) {
       error = errorMessage(e)
@@ -29,22 +29,24 @@
 
   const done = $derived(data ? data.total - data.pending : 0)
 
-  const groups = $derived.by(() => {
-    const map = new Map<string, SessionItemDto[]>()
-    for (const item of data?.items ?? []) {
-      const key = item.roomName ?? 'Logement'
-      map.set(key, [...(map.get(key) ?? []), item])
-    }
-    return [...map.entries()]
-  })
+  // Urgent plants first; the server already sorts each part.
+  const sections = $derived(
+    [
+      { title: 'En priorité', items: data?.items.filter((i) => i.urgent) ?? [] },
+      { title: 'Dans la file', items: data?.items.filter((i) => !i.urgent) ?? [] },
+    ].filter((s) => s.items.length > 0),
+  )
 
-  function setDone(plantId: string, value: SessionItemDto['done']) {
+  function setDone(plantId: string, value: QueueItemDto['done']) {
     if (!data) return
     const item = data.items.find((i) => i.plantId === plantId)
     if (!item) return
     const wasDone = item.done !== null
     item.done = value
-    if (wasDone !== (value !== null)) data.pending += value ? -1 : 1
+    if (wasDone !== (value !== null)) {
+      data.pending += value ? -1 : 1
+      if (item.urgent) data.urgent += value ? -1 : 1
+    }
   }
 
   async function undo(wateringIds: string[]) {
@@ -56,7 +58,7 @@
     await load()
   }
 
-  async function water(items: SessionItemDto[]) {
+  async function water(items: QueueItemDto[]) {
     const optimistic = { wateringId: '', occupantName: auth.occupant?.name ?? 'vous', at: new Date().toISOString() }
     for (const item of items) setDone(item.plantId, { ...optimistic })
 
@@ -77,7 +79,7 @@
     }
     const label = items.length === 1 ? `${items[0].name} arrosée` : `${items.length} plantes arrosées`
     showToast(label, { label: 'Annuler', run: () => undo(ids) })
-    await load() // refreshes the next-session preview, which depends on today's waterings
+    await load() // refreshes the next entry, which depends on today's waterings
   }
 
   const pendingItems = $derived(data?.items.filter((i) => i.done === null) ?? [])
@@ -85,7 +87,7 @@
 
 <main class="page">
   <header class="page-header">
-    <h1>Aujourd'hui</h1>
+    <h1>À arroser</h1>
   </header>
 
   {#if error && !data}
@@ -99,31 +101,33 @@
     {#if data.total === 0}
       <div class="empty card">
         <div class="emoji">🌱</div>
-        <h2>Pas de session aujourd'hui</h2>
-        {@render nextSession()}
+        <h2>Rien à arroser pour l'instant</h2>
+        {@render nextEntry()}
       </div>
     {:else}
       <section class="summary card">
         <div class="summary-text">
           {#if data.pending > 0}
-            <strong>{plural(data.pending, 'plante à arroser', 'plantes à arroser')}</strong>
+            <strong>
+              {#if data.urgent > 0}{plural(data.urgent, 'urgente', 'urgentes')}{' · '}{/if}{data.pending} dans la file
+            </strong>
           {:else}
             <strong>Tout est arrosé 🌱</strong>
           {/if}
           <span class="muted">{done}/{data.total}</span>
         </div>
         <ProgressBar {done} total={data.total} />
-        {#if data.pending === 0}{@render nextSession()}{/if}
+        {#if data.pending === 0}{@render nextEntry()}{/if}
       </section>
 
       {#if pendingItems.length > 1}
         <button class="btn btn-water btn-block all" onclick={() => water(pendingItems)}>Tout arroser</button>
       {/if}
 
-      {#each groups as [room, items] (room)}
-        <h2 class="section-title">{room}</h2>
+      {#each sections as section (section.title)}
+        <h2 class="section-title">{section.title}</h2>
         <ul class="stack list">
-          {#each items as item (item.plantId)}
+          {#each section.items as item (item.plantId)}
             <SessionCard {item} onWater={(i) => water([i])} />
           {/each}
         </ul>
@@ -132,10 +136,10 @@
   {/if}
 </main>
 
-{#snippet nextSession()}
-  {#if data?.next}
+{#snippet nextEntry()}
+  {#if data?.nextEntry}
     <p class="muted next">
-      Prochaine session : <strong>{formatDay(data.next.date, data.date)}</strong> · {plural(data.next.count, 'plante', 'plantes')}
+      Prochaine plante : <strong>{data.nextEntry.plantName}</strong>, {formatDay(data.nextEntry.date, data.date)}
     </p>
   {/if}
 {/snippet}

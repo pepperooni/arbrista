@@ -1,10 +1,10 @@
 <script lang="ts">
-  import type { SessionItemDto } from '../../../src/shared/api-types.ts'
+  import type { QueueItemDto } from '../../../src/shared/api-types.ts'
   import { formatTime } from '../lib/format.ts'
   import { navigate } from '../lib/router.svelte.ts'
   import Icon from './Icon.svelte'
 
-  let { item, onWater }: { item: SessionItemDto; onWater: (item: SessionItemDto) => void } = $props()
+  let { item, onWater }: { item: QueueItemDto; onWater: (item: QueueItemDto) => void } = $props()
 
   const SWIPE_THRESHOLD = 80
   let startX = 0
@@ -66,12 +66,17 @@
       <strong>{item.name}</strong>
       {#if item.done}
         <span class="muted small">Arrosée par {item.done.occupantName} · {formatTime(item.done.at)}</span>
-      {:else if item.daysOverdue > 0}
-        <span class="badge badge-warn">en retard de {item.daysOverdue} j</span>
-      {:else if item.daysEarly > 0}
-        <span class="badge">en avance de {item.daysEarly} j</span>
       {:else}
-        <span class="muted small">à arroser aujourd'hui</span>
+        <span class="meta">
+          {#if item.daysOverdue > 0}
+            <span class="badge badge-warn">en retard de {item.daysOverdue} j</span>
+          {:else if item.urgent}
+            <span class="badge badge-warn">urgente</span>
+          {:else}
+            <span class="badge">encore {item.daysLeft} j</span>
+          {/if}
+          <span class="muted small">{item.roomName ?? 'Logement'}</span>
+        </span>
       {/if}
     </div>
 
@@ -139,6 +144,12 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
   }
 
   .small {

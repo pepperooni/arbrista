@@ -4,7 +4,7 @@
   import { link, router } from '../lib/router.svelte.ts'
 
   const tabs: { href: string; label: string; icon: IconName }[] = [
-    { href: '/', label: "Aujourd'hui", icon: 'droplet' },
+    { href: '/', label: 'À arroser', icon: 'droplet' },
     { href: '/plants', label: 'Plantes', icon: 'sprout' },
     { href: '/household', label: 'Logement', icon: 'house' },
   ]

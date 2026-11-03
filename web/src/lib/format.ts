@@ -37,13 +37,16 @@ export function plural(n: number, singular: string, pluralForm: string): string 
 
 /** Relative due label for lists: "aujourd'hui", "dans 3 j", "en retard de 2 j". */
 /** `daysOverdue` comes from the server: late only once the grouping margin is exceeded. */
-export function dueLabel(nextDue: string, today: string, daysOverdue = 0): { text: string; tone: 'warn' | 'water' | 'muted' } {
-  const diff = diffDays(nextDue, today)
-  if (daysOverdue > 0) return { text: `en retard de ${daysOverdue} j`, tone: 'warn' }
-  if (diff < 0) return { text: `en retard de ${-diff} j`, tone: 'warn' }
-  if (diff === 0) return { text: "à arroser aujourd'hui", tone: 'water' }
-  if (diff === 1) return { text: 'demain', tone: 'muted' }
-  return { text: `dans ${diff} j`, tone: 'muted' }
+/** Where a plant stands with the watering queue: late, urgent, in the queue, or entering it in N days. */
+export function dueLabel(
+  p: { queueFrom: string; urgentFrom: string; daysOverdue: number },
+  today: string,
+): { text: string; tone: 'warn' | 'water' | 'muted' } {
+  if (p.daysOverdue > 0) return { text: `en retard de ${p.daysOverdue} j`, tone: 'warn' }
+  if (p.urgentFrom <= today) return { text: 'urgente', tone: 'warn' }
+  if (p.queueFrom <= today) return { text: 'dans la file', tone: 'water' }
+  const days = diffDays(p.queueFrom, today)
+  return { text: days === 1 ? 'demain' : `dans ${days} j`, tone: 'muted' }
 }
 
 export { shortDayFormat }

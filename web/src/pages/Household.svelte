@@ -224,7 +224,7 @@
       <label class="switch-row">
         <span class="grow">
           <strong>Regrouper les arrosages</strong>
-          <span class="muted small">Avance ou retarde un peu certaines plantes, dans une marge adaptée à leur rythme, pour arroser moins souvent.</span>
+          <span class="muted small">Ajoute les plantes à la file un peu avant leur date idéale (selon leur rythme), pour tout arroser en une fois. Désactivé : une plante n'entre dans la file que le jour où elle est due.</span>
         </span>
         <input
           type="checkbox"
