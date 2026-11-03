@@ -75,15 +75,23 @@ export function planSessions(
   grouping: boolean,
   horizonDays = 60,
 ): PlannedSession[] {
-  const last = new Map(candidates.map((c) => [c.plantId, c.lastWatered]))
+  // Windows are computed once, then only for the plants of each simulated session.
+  const windows = new Map(candidates.map((c) => [c.plantId, { c, w: wateringWindow(c.rhythms, c.lastWatered, today, bounds, grouping) }]))
+  const end = addDays(today, horizonDays)
   const sessions: PlannedSession[] = []
-  for (let i = 1; i <= horizonDays; i++) {
-    const day = addDays(today, i)
-    const windows = candidates.map((c) => ({ id: c.plantId, w: wateringWindow(c.rhythms, last.get(c.plantId) ?? null, today, bounds, grouping) }))
-    if (!windows.some(({ w }) => w.closes <= day)) continue
-    const plantIds = windows.filter(({ w }) => w.opens <= day).map(({ id }) => id)
-    for (const id of plantIds) last.set(id, day)
+  let day = addDays(today, 1)
+  while (day <= end && windows.size > 0) {
+    // Skip straight to the next day on which some window closes.
+    const firstClose = [...windows.values()].reduce((min, { w }) => (w.closes < min ? w.closes : min), end)
+    if (firstClose > day) day = firstClose
+    if (![...windows.values()].some(({ w }) => w.closes <= day)) break
+    const plantIds = [...windows.values()].filter(({ w }) => w.opens <= day).map(({ c }) => c.plantId)
+    for (const id of plantIds) {
+      const entry = windows.get(id)!
+      entry.w = wateringWindow(entry.c.rhythms, day, today, bounds, grouping)
+    }
     sessions.push({ date: day, plantIds })
+    day = addDays(day, 1)
   }
   return sessions
 }

@@ -29,12 +29,21 @@ it('window around the ideal date', () =>
     closes: '2026-11-14',
   }))
 
-it('a never-watered plant is ideal on the given today', () =>
+it('a never-watered plant is due today, without margin (its window does not slide day after day)', () =>
   expect(wateringWindow({ summer: every(7), winter: null }, null, '2026-11-03', north, true)).toEqual({
     ideal: '2026-11-03',
-    opens: '2026-11-02',
-    closes: '2026-11-04',
+    opens: '2026-11-03',
+    closes: '2026-11-03',
   }))
+
+it('a weekly occurrence watered early is used up: the next one is the following scheduled day', () => {
+  const monThu: Rhythm = { kind: 'weekly', days: [0, 3], everyWeeks: 1, anchor: '2026-11-02' }
+  // watered Wednesday 11-04, one day before Thursday's occurrence
+  expect(wateringWindow({ summer: monThu, winter: null }, '2026-11-04', '2026-11-04', north, true).ideal).toBe('2026-11-09')
+  const satEvery2: Rhythm = { kind: 'weekly', days: [5], everyWeeks: 2, anchor: '2026-11-02' }
+  // watered Thursday 11-05, two days before Saturday 11-07 (margin 3)
+  expect(wateringWindow({ summer: satEvery2, winter: null }, '2026-11-05', '2026-11-05', north, true).ideal).toBe('2026-11-21')
+})
 
 it('the margin follows the rhythm in force at the ideal date', () =>
   // summer every 5 (±1), winter every 14 (±3): last watering 09-28 → ideal 10-12 in winter → ±3

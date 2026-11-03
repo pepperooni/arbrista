@@ -1,7 +1,7 @@
 import { addDays, diffDays } from './calendar.ts'
 import type { LocalDate } from './calendar.ts'
 import { isScheduledOn } from './rhythm.ts'
-import { rhythmOn } from './season.ts'
+import { nextSeasonStart, rhythmOn } from './season.ts'
 import type { PlantRhythms, SeasonBounds } from './season.ts'
 
 const MAX_SEARCH_DAYS = 366 * 53
@@ -17,9 +17,18 @@ export function nextDueDate(
   bounds: SeasonBounds,
 ): LocalDate {
   if (lastWatered === null) return today
-  for (let i = 1; i <= MAX_SEARCH_DAYS; i++) {
-    const d = addDays(lastWatered, i)
-    if (isScheduledOn(rhythmOn(rhythms, d, bounds), d, lastWatered)) return d
+  let d = addDays(lastWatered, 1)
+  for (let step = 0; step < MAX_SEARCH_DAYS; step++) {
+    const r = rhythmOn(rhythms, d, bounds)
+    if (isScheduledOn(r, d, lastWatered)) return d
+    if (r.kind === 'interval') {
+      // Jump to the interval's due date, but never past a season change (the other rhythm may apply).
+      const due = addDays(lastWatered, r.everyDays)
+      const change = nextSeasonStart(d, bounds)
+      d = due < change ? due : change
+    } else {
+      d = addDays(d, 1)
+    }
   }
   throw new Error('No due date found')
 }

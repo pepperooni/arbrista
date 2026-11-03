@@ -1,4 +1,4 @@
-import { monthDayOf } from './calendar.ts'
+import { isLocalDate, monthDayOf } from './calendar.ts'
 import type { LocalDate, MonthDay } from './calendar.ts'
 import { ValidationError } from './errors.ts'
 import type { Rhythm } from './rhythm.ts'
@@ -31,4 +31,14 @@ export function seasonOf(date: LocalDate, { summerStart, winterStart }: SeasonBo
 
 export function rhythmOn(rhythms: PlantRhythms, date: LocalDate, bounds: SeasonBounds): Rhythm {
   return seasonOf(date, bounds) === 'winter' && rhythms.winter ? rhythms.winter : rhythms.summer
+}
+
+/** First date after `date` on which a season starts. */
+export function nextSeasonStart(date: LocalDate, { summerStart, winterStart }: SeasonBounds): LocalDate {
+  const year = Number(date.slice(0, 4))
+  const candidates = [year, year + 1, year + 2]
+    .flatMap((y) => [`${y}-${summerStart}`, `${y}-${winterStart}`])
+    .filter((d) => isLocalDate(d) && d > date) // 02-29 only exists in leap years
+    .sort()
+  return candidates[0]
 }

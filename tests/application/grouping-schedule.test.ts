@@ -66,3 +66,12 @@ it('the next session announced on a day without session is the planned one', asy
   ctx.clock.set('2026-11-04T08:00:00Z')
   expect((await watering.today()).next).toEqual({ date: '2026-11-05', count: 1 })
 })
+
+it('a plant never watered in the app is in the session of the day it was added, grouping on', async () => {
+  ctx.clock.set('2026-11-04T08:00:00Z')
+  await plants.create({ name: 'Nouvelle', summerRhythm: { kind: 'interval', everyDays: 7 } })
+  const s = await watering.today()
+  expect(s.items.map((i) => i.name)).toContain('Nouvelle')
+  ctx.clock.set('2026-11-04T17:00:00Z')
+  expect(await reminder.runIfDue()).toEqual({ notified: 1 })
+})

@@ -81,3 +81,11 @@ describe("today's session", () => {
     expect(buildSession(c, '2026-11-10', north, true)[0].plantId).toBe('A')
   })
 })
+
+it('plans 100 plants fast enough for the Workers CPU budget', () => {
+  const many = Array.from({ length: 100 }, (_, i) => ({ plantId: `p${i}`, rhythms: every(5 + (i % 26)), lastWatered: '2026-10-20' }))
+  planSessions(many, '2026-11-04', north, true) // warm-up
+  const t = performance.now()
+  planSessions(many, '2026-11-04', north, true)
+  expect(performance.now() - t).toBeLessThan(15)
+})

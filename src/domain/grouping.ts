@@ -34,7 +34,13 @@ export function wateringWindow(
   bounds: SeasonBounds,
   grouping: boolean,
 ): WateringWindow {
-  const ideal = nextDueDate(rhythms, lastWatered, today, bounds)
+  // Never watered: due today, without margin — otherwise its window would slide with every day.
+  if (lastWatered === null) return { ideal: today, opens: today, closes: today }
+  // Weekly rhythms: an occurrence whose window already contains the last watering was used up by
+  // it (watered early to join a session), so the next one is searched after that window.
+  const current = rhythmOn(rhythms, addDays(lastWatered, 1), bounds)
+  const usedUp = current.kind === 'weekly' ? marginDays(current, grouping) : 0
+  const ideal = nextDueDate(rhythms, addDays(lastWatered, usedUp), today, bounds)
   const margin = marginDays(rhythmOn(rhythms, ideal, bounds), grouping)
   return { ideal, opens: addDays(ideal, -margin), closes: addDays(ideal, margin) }
 }
