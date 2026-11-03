@@ -17,6 +17,8 @@ let ficus: Plant
 beforeEach(async () => {
   ctx = createTestContext()
   lea = (await makeHouseholdUseCases(ctx.deps).setup({ householdName: 'Maison', occupantName: 'Léa' })).occupant
+  // These tests are about the reminder itself, on exact due dates (grouping has its own tests).
+  await makeHouseholdUseCases(ctx.deps).updateSettings({ groupWaterings: false })
   plants = makePlantUseCases(ctx.deps)
   watering = makeWateringUseCases(ctx.deps)
   reminder = makeReminderUseCases({ ...ctx.deps, watering })

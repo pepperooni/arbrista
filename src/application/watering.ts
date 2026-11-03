@@ -2,8 +2,6 @@ import { randomUUID } from 'node:crypto'
 import { toLocalDate } from '../domain/calendar.ts'
 import { NotFoundError } from '../domain/errors.ts'
 import type { Household, Occupant, Watering } from '../domain/plant.ts'
-import { buildSession, nextSessionPreview } from '../domain/session.ts'
-import type { SessionCandidate } from '../domain/session.ts'
 import type { SessionDto, WateringDto } from '../shared/api-types.ts'
 import type {
   Clock,
@@ -14,7 +12,8 @@ import type {
   RoomRepository,
   WateringRepository,
 } from './ports.ts'
-import { occupantNames, photoUrl, toWateringDto } from './views.ts'
+import { loadSchedule } from './schedule.ts'
+import { occupantNames, toWateringDto } from './views.ts'
 
 const DOUBLE_TAP_MS = 60_000
 
@@ -61,43 +60,18 @@ export function makeWateringUseCases(deps: {
     },
 
     /** R3 — today's session, computed from the watering history. */
+    /** Today's session (G1–G5) and the next planned one (G6). */
     async today(): Promise<SessionDto> {
-      // The day depends on the household's time zone; everything else is fetched alongside it.
-      const h = await household()
-      const day = toLocalDate(clock.now(), h.timezone)
-      const [roomList, mains, before, todays, all, last, names] = await Promise.all([
-        rooms.list(),
-        photos.mainFileNames(),
-        waterings.lastDayBefore(day),
-        waterings.onDay(day),
-        plants.list(),
-        waterings.lastDay(),
-        occupants.namesById(),
-      ])
-      const roomNames = new Map(roomList.map((r) => [r.id, r.name]))
-      const firstToday = new Map<string, Watering>()
-      for (const w of todays) if (!firstToday.has(w.plantId)) firstToday.set(w.plantId, w)
-
-      const candidates: SessionCandidate[] = all.map((p) => {
-        const w = firstToday.get(p.id)
-        const main = mains.get(p.id)
-        return {
-          plantId: p.id,
-          name: p.name,
-          roomName: p.roomId ? (roomNames.get(p.roomId) ?? null) : null,
-          mainPhoto: main ? photoUrl(main) : null,
-          rhythms: p.rhythms,
-          lastWateredBefore: before.get(p.id) ?? null,
-          wateredToday: w ? { wateringId: w.id, occupantName: names.get(w.occupantId) ?? '?', at: w.wateredAt } : null,
-        }
-      })
-      const items = buildSession(candidates, day, h).map(({ mainPhoto, ...item }) => ({ ...item, mainPhotoUrl: mainPhoto }))
-      const next = nextSessionPreview(
-        all.map((p) => ({ rhythms: p.rhythms, lastWatered: last.get(p.id) ?? null })),
-        day,
-        h,
-      )
-      return { date: day, items, pending: items.filter((i) => i.done === null).length, total: items.length, next }
+      const s = await loadSchedule(deps)
+      const items = s.items.map(({ mainPhoto, ...item }) => ({ ...item, mainPhotoUrl: mainPhoto }))
+      const first = s.plan[0]
+      return {
+        date: s.day,
+        items,
+        pending: items.filter((i) => i.done === null).length,
+        total: items.length,
+        next: first ? { date: first.date, count: first.plantIds.length } : null,
+      }
     },
   }
 }

@@ -41,7 +41,8 @@ it('household journey: setup, invite, plant, session, watering shared between oc
   const lea = await post('/api/setup', { householdName: 'Maison', occupantName: 'Léa' })
   const { inviteCode } = await get('/api/household', lea.token)
   const tom = await post(`/api/join/${inviteCode}`, { occupantName: 'Tom' })
-  const plant = await post('/api/plants', { name: 'Ficus', summerRhythm: { kind: 'interval', everyDays: 7 } }, lea.token)
+  // Every 3 days: no grouping margin, so a new plant is due today.
+  const plant = await post('/api/plants', { name: 'Ficus', summerRhythm: { kind: 'interval', everyDays: 3 } }, lea.token)
   expect((await get('/api/session/today', lea.token)).pending).toBe(1)
   await post(`/api/plants/${plant.id}/waterings`, {}, tom.token)
   const session = await get('/api/session/today', lea.token)

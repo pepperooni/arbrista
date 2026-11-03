@@ -18,6 +18,8 @@ beforeEach(async () => {
   household = makeHouseholdUseCases(ctx.deps)
   lea = (await household.setup({ householdName: 'Maison', occupantName: 'Léa' })).occupant
   tom = (await household.join((await household.getSettings()).inviteCode, 'Tom')).occupant
+  // These tests are about acknowledging waterings, on exact due dates (grouping has its own tests).
+  await household.updateSettings({ groupWaterings: false })
   plants = makePlantUseCases(ctx.deps)
   watering = makeWateringUseCases(ctx.deps)
   ficus = await plants.create({ name: 'Ficus', summerRhythm: { kind: 'interval', everyDays: 7 } })

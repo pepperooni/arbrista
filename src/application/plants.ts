@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto'
 import { toLocalDate } from '../domain/calendar.ts'
-import { daysOverdue, nextDueDate } from '../domain/schedule.ts'
 import type { PlantDetailDto, PlantSummaryDto } from '../shared/api-types.ts'
 import { NotFoundError, ValidationError } from '../domain/errors.ts'
 import { toRhythm } from '../domain/plant.ts'
@@ -16,6 +15,8 @@ import type {
   RoomRepository,
   WateringRepository,
 } from './ports.ts'
+import { loadSchedule, overdueDays, plannedDate } from './schedule.ts'
+import type { Schedule } from './schedule.ts'
 import { photoUrl } from './views.ts'
 
 const HISTORY_LIMIT = 20
@@ -78,18 +79,17 @@ export function makePlantUseCases(deps: PlantDeps) {
     }
   }
 
-  function summarize(p: Plant, h: Household, lastDays: Map<string, string>, mains: Map<string, string>): PlantSummaryDto {
-    const today = toLocalDate(clock.now(), h.timezone)
-    const nextDue = nextDueDate(p.rhythms, lastDays.get(p.id) ?? null, today, h)
-    const main = mains.get(p.id)
+  function summarize(p: Plant, s: Schedule): PlantSummaryDto {
+    const main = s.mainFileNames.get(p.id)
     return {
       id: p.id,
       name: p.name,
       scientificName: p.scientificName,
       roomId: p.roomId,
       mainPhotoUrl: main ? photoUrl(main) : null,
-      nextDue,
-      daysOverdue: daysOverdue(nextDue, today),
+      nextDue: plannedDate(s, p.id),
+      idealDue: s.windows.get(p.id)!.ideal,
+      daysOverdue: overdueDays(s, p.id),
     }
   }
 
@@ -97,23 +97,21 @@ export function makePlantUseCases(deps: PlantDeps) {
     list: (): Promise<Plant[]> => plants.list(),
 
     async summaries(): Promise<PlantSummaryDto[]> {
-      const [h, lastDays, mains, all] = await Promise.all([household(), waterings.lastDay(), photos.mainFileNames(), plants.list()])
-      return all.map((p) => summarize(p, h, lastDays, mains))
+      const s = await loadSchedule(deps)
+      return s.plants.map((p) => summarize(p, s))
     },
 
     async detail(id: string): Promise<PlantDetailDto> {
       // One round of parallel queries instead of fetching the plant first.
-      const [p, h, lastDays, mains, plantPhotos, history, names] = await Promise.all([
+      const [p, s, plantPhotos, history, names] = await Promise.all([
         requirePlant(id),
-        household(),
-        waterings.lastDay(),
-        photos.mainFileNames(),
+        loadSchedule(deps),
         photos.listByPlant(id),
         waterings.history(id, HISTORY_LIMIT),
         occupants.namesById(),
       ])
       return {
-        ...summarize(p, h, lastDays, mains),
+        ...summarize(p, s),
         description: p.description,
         care: p.care,
         summerRhythm: p.rhythms.summer,

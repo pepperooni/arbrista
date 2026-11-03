@@ -27,6 +27,7 @@ export type SessionItemDto = {
   roomName: string | null
   mainPhotoUrl: string | null
   dueDate: string
+  daysEarly: number
   daysOverdue: number
   done: WateredDto | null
 }
@@ -47,7 +48,10 @@ export type PlantSummaryDto = {
   scientificName: string | null
   roomId: string | null
   mainPhotoUrl: string | null
+  /** Planned watering: today's or a coming session (grouping applied). */
   nextDue: string
+  /** Ideal date from the plant's rhythm alone. */
+  idealDue: string
   daysOverdue: number
 }
 
