@@ -15,7 +15,7 @@ import type {
   RoomRepository,
   WateringRepository,
 } from './ports.ts'
-import { loadSchedule, overdueDays, plannedDate } from './schedule.ts'
+import { loadSchedule, overdueDays } from './schedule.ts'
 import type { Schedule } from './schedule.ts'
 import { photoUrl } from './views.ts'
 
@@ -87,8 +87,9 @@ export function makePlantUseCases(deps: PlantDeps) {
       scientificName: p.scientificName,
       roomId: p.roomId,
       mainPhotoUrl: main ? photoUrl(main) : null,
-      nextDue: plannedDate(s, p.id),
-      idealDue: s.windows.get(p.id)!.ideal,
+      nextDue: s.windows.get(p.id)!.ideal,
+      queueFrom: s.windows.get(p.id)!.opens,
+      urgentFrom: s.windows.get(p.id)!.closes,
       daysOverdue: overdueDays(s, p.id),
     }
   }

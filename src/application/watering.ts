@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { toLocalDate } from '../domain/calendar.ts'
 import { NotFoundError } from '../domain/errors.ts'
 import type { Household, Occupant, Watering } from '../domain/plant.ts'
-import type { SessionDto, WateringDto } from '../shared/api-types.ts'
+import type { QueueDto, WateringDto } from '../shared/api-types.ts'
 import type {
   Clock,
   HouseholdRepository,
@@ -60,17 +60,18 @@ export function makeWateringUseCases(deps: {
     },
 
     /** R3 — today's session, computed from the watering history. */
-    /** Today's session (G1–G5) and the next planned one (G6). */
-    async today(): Promise<SessionDto> {
+    /** Today's watering queue (F1–F5). */
+    async today(): Promise<QueueDto> {
       const s = await loadSchedule(deps)
-      const items = s.items.map(({ mainPhoto, ...item }) => ({ ...item, mainPhotoUrl: mainPhoto }))
-      const first = s.plan[0]
+      const items = s.queue.map(({ mainPhoto, ...item }) => ({ ...item, mainPhotoUrl: mainPhoto }))
+      const pending = items.filter((i) => i.done === null)
       return {
         date: s.day,
         items,
-        pending: items.filter((i) => i.done === null).length,
+        urgent: pending.filter((i) => i.urgent).length,
+        pending: pending.length,
         total: items.length,
-        next: first ? { date: first.date, count: first.plantIds.length } : null,
+        nextEntry: pending.length === 0 ? s.nextEntry : null,
       }
     },
   }

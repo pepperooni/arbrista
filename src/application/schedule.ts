@@ -4,8 +4,8 @@ import { NotFoundError } from '../domain/errors.ts'
 import { wateringWindow } from '../domain/grouping.ts'
 import type { WateringWindow } from '../domain/grouping.ts'
 import type { Household, Plant, Watering } from '../domain/plant.ts'
-import { buildSession, planSessions } from '../domain/session.ts'
-import type { PlannedSession, SessionCandidate, SessionItem } from '../domain/session.ts'
+import { buildQueue, nextQueueEntry } from '../domain/queue.ts'
+import type { QueueCandidate, QueueItem } from '../domain/queue.ts'
 import type {
   Clock,
   HouseholdRepository,
@@ -32,15 +32,15 @@ export type Schedule = {
   day: LocalDate
   plants: Plant[]
   mainFileNames: Map<string, string>
-  /** Today's session (G1–G5). */
-  items: SessionItem[]
-  /** Upcoming sessions (G6). */
-  plan: PlannedSession[]
+  /** Today's watering queue (F1–F4). */
+  queue: QueueItem[]
+  /** Next plant to enter the queue (F5). */
+  nextEntry: { date: LocalDate; plantName: string } | null
   /** Each plant's window as of now, today's waterings included. */
   windows: Map<string, WateringWindow>
 }
 
-/** Loads the history once and derives today's session, the upcoming sessions and each plant's window. */
+/** Loads the history once and derives today's queue, the next entry and each plant's current window. */
 export async function loadSchedule(deps: ScheduleDeps): Promise<Schedule> {
   const { households, occupants, rooms, plants, photos, waterings, clock } = deps
   // The day depends on the household's time zone; everything else is fetched alongside it.
@@ -61,7 +61,7 @@ export async function loadSchedule(deps: ScheduleDeps): Promise<Schedule> {
   const firstToday = new Map<string, Watering>()
   for (const w of todays) if (!firstToday.has(w.plantId)) firstToday.set(w.plantId, w)
 
-  const candidates: SessionCandidate[] = all.map((p) => {
+  const candidates: QueueCandidate[] = all.map((p) => {
     const w = firstToday.get(p.id)
     const main = mains.get(p.id)
     return {
@@ -74,22 +74,16 @@ export async function loadSchedule(deps: ScheduleDeps): Promise<Schedule> {
       wateredToday: w ? { wateringId: w.id, occupantName: names.get(w.occupantId) ?? '?', at: w.wateredAt } : null,
     }
   })
-  const current = all.map((p) => ({ plantId: p.id, rhythms: p.rhythms, lastWatered: last.get(p.id) ?? null }))
+  const current = all.map((p) => ({ plantId: p.id, name: p.name, rhythms: p.rhythms, lastWatered: last.get(p.id) ?? null }))
   return {
     household,
     day,
     plants: all,
     mainFileNames: mains,
-    items: buildSession(candidates, day, household, grouping),
-    plan: planSessions(current, day, household, grouping),
+    queue: buildQueue(candidates, day, household, grouping),
+    nextEntry: nextQueueEntry(current, day, household, grouping),
     windows: new Map(current.map((c) => [c.plantId, wateringWindow(c.rhythms, c.lastWatered, day, household, grouping)])),
   }
-}
-
-/** When the plant will be watered: today if pending in today's session, else its next planned session. */
-export function plannedDate(s: Schedule, plantId: string): LocalDate {
-  if (s.items.some((i) => i.plantId === plantId && i.done === null)) return s.day
-  return s.plan.find((p) => p.plantIds.includes(plantId))?.date ?? s.windows.get(plantId)!.ideal
 }
 
 /** Days past the ideal date, only once the margin is exceeded. */

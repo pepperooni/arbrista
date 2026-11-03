@@ -34,7 +34,7 @@ it('watering by one occupant marks it done for everybody', async () => {
   const s = await watering.today()
   expect(s.pending).toBe(0)
   expect(s.items[0].done?.occupantName).toBe('Tom')
-  expect(s.next).toEqual({ date: '2026-11-09', count: 1 })
+  expect(s.nextEntry).toEqual({ date: '2026-11-09', plantName: 'Ficus' })
 })
 
 it('a double tap within a minute does not create two waterings', async () => {
