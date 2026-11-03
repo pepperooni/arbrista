@@ -1,6 +1,9 @@
 <script lang="ts">
   import { untrack } from 'svelte'
   import type { Care, PhotoDto, PlantDetailDto, PlantInput, RhythmInput, RoomDto } from '../../../src/shared/api-types.ts'
+  import type { CatalogPlant } from '../../../src/shared/plant-catalog.ts'
+  import CatalogConfirmSheet from '../components/CatalogConfirmSheet.svelte'
+  import CatalogSearch from '../components/CatalogSearch.svelte'
   import Icon from '../components/Icon.svelte'
   import PhotoManager from '../components/PhotoManager.svelte'
   import RhythmPicker from '../components/RhythmPicker.svelte'
@@ -31,6 +34,31 @@
   let pending = $state<{ blob: Blob; url: string }[]>([])
   let saving = $state(false)
   let error = $state('')
+  let candidate = $state<CatalogPlant | null>(null)
+  let fromLibrary = $state<string | null>(null)
+  let careOpen = $state(false)
+  // Re-creates the rhythm pickers so they show rhythms set from the library.
+  let rhythmVersion = $state(0)
+
+  /** Confirmed library plant: fills empty fields, always applies the watering rhythms. */
+  async function applyLibrary(p: CatalogPlant) {
+    candidate = null
+    const { fillFromCatalog } = await import('../../../src/shared/catalog.ts')
+    const filled = fillFromCatalog(
+      { name, scientificName, description, care, summerRhythm, winterRhythm: hasWinter ? winterRhythm : null },
+      p,
+    )
+    name = filled.name
+    scientificName = filled.scientificName
+    description = filled.description
+    care = filled.care
+    summerRhythm = filled.summerRhythm
+    hasWinter = filled.winterRhythm !== null
+    if (filled.winterRhythm) winterRhythm = filled.winterRhythm
+    rhythmVersion++
+    careOpen = true
+    fromLibrary = p.name
+  }
 
   api.get<RoomDto[]>('/rooms').then((r) => (rooms = r)).catch(() => {})
 
@@ -95,6 +123,15 @@
 
   {#if loaded}
     <form class="stack" onsubmit={save}>
+      <section class="library">
+        <CatalogSearch onpick={(p) => (candidate = p)} />
+        {#if fromLibrary}
+          <p class="muted hint filled" role="status">
+            Fiche complétée avec « {fromLibrary} ». Les rythmes sont indicatifs : ajustez-les selon votre intérieur.
+          </p>
+        {/if}
+      </section>
+
       <details open class="card">
         <summary>Identité <Icon name="chevron" size={18} /></summary>
         <div class="stack content">
@@ -131,18 +168,22 @@
       <details open class="card">
         <summary>Arrosage <Icon name="chevron" size={18} /></summary>
         <div class="stack content">
-          <RhythmPicker label={hasWinter ? 'Été' : 'Rythme'} bind:value={summerRhythm} />
+          {#key rhythmVersion}
+            <RhythmPicker label={hasWinter ? 'Été' : 'Rythme'} bind:value={summerRhythm} />
+          {/key}
           <label class="switch">
             <input type="checkbox" bind:checked={hasWinter} />
             <span>Rythme d'hiver différent</span>
           </label>
           {#if hasWinter}
-            <RhythmPicker label="Hiver" bind:value={winterRhythm} />
+            {#key rhythmVersion}
+              <RhythmPicker label="Hiver" bind:value={winterRhythm} />
+            {/key}
           {/if}
         </div>
       </details>
 
-      <details class="card">
+      <details class="card" bind:open={careOpen}>
         <summary>Entretien <Icon name="chevron" size={18} /></summary>
         <div class="stack content">
           <div class="field">
@@ -163,7 +204,7 @@
           </div>
           <label class="field">
             <span>Conseils d'arrosage</span>
-            <input class="input" bind:value={care.watering} maxlength="500" placeholder="Laisser sécher le substrat entre deux arrosages" />
+            <textarea class="input short" bind:value={care.watering} maxlength="500" rows="2" placeholder="Laisser sécher le substrat entre deux arrosages"></textarea>
           </label>
           <label class="field">
             <span>Température</span>
@@ -183,6 +224,8 @@
     <p class="muted">{error}</p>
   {/if}
 </main>
+
+<CatalogConfirmSheet plant={candidate} onconfirm={applyLibrary} oncancel={() => (candidate = null)} />
 
 <style>
   details {
@@ -234,6 +277,14 @@
     width: 22px;
     height: 22px;
     accent-color: var(--accent);
+  }
+
+  textarea.short {
+    min-height: 64px;
+  }
+
+  .filled {
+    margin: var(--space-2) var(--space-3) 0;
   }
 
   .hint {

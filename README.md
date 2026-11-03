@@ -3,6 +3,7 @@
 Arbrista est une application mobile (PWA) pour suivre l'arrosage des plantes de la maison, à plusieurs.
 
 - **Fiches plantes** : nom, nom scientifique, description, conseils (exposition, humidité, température…) et photos, dont une photo principale qui identifie la plante.
+- **Bibliothèque de plantes** : environ 140 plantes d'intérieur courantes. On en choisit une, on confirme sur photos (Wikimedia Commons), et la fiche se remplit : description, exposition, humidité, température, conseils, rythmes d'arrosage été/hiver.
 - **Pièces** : chaque plante appartient au logement, et on peut la ranger dans une pièce.
 - **Rythmes d'arrosage** : jours fixes (par ex. lundi et jeudi, toutes les N semaines) ou « tous les N jours après le dernier arrosage ». Un rythme d'hiver distinct est possible.
 - **Sessions d'arrosage** : chaque jour, l'application regroupe les plantes dues ou en retard en une seule liste. Une seule notification par session est envoyée, jamais une par plante.
