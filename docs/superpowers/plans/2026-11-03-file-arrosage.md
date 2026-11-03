@@ -132,7 +132,12 @@ it.each([
   [['Ficus', 'Basilic', 'Pilea', 'Monstera'], 1, 'Le Ficus, le Basilic et 2 autres ne peuvent plus attendre · 1 plante dans la file'],
 ])('reminder text %#', (names, size, body) => expect(reminderPayload(names, size)).toEqual({ title: '🌿 Arrosage', body, url: '/' }))
 // queue.test.ts (grouping on, subscription e1):
-it('no reminder while nothing is urgent, even with a full queue', /* 11-03 17:00Z… only B/C in window */)
+it('no reminder while nothing is urgent, even with plants in the queue', async () => {
+  ctx.clock.set('2026-11-05T08:00:00Z'); await watering.water(e.id, lea)   // E next ideal 11-08
+  ctx.clock.set('2026-11-06T17:00:00Z')                                     // queue: A (window 11-06..11-08), not urgent
+  expect((await watering.today()).pending).toBe(1)
+  expect(await reminder.runIfDue()).toEqual({ notified: 0 })
+})
 it('reminds again the next day while an urgent plant is not watered', async () => {
   ctx.clock.set('2026-11-05T17:00:00Z'); await reminder.runIfDue()
   ctx.clock.set('2026-11-06T17:00:00Z'); await reminder.runIfDue()
