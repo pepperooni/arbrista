@@ -11,6 +11,7 @@ export type HouseholdDto = {
   summerStart: string
   winterStart: string
   inviteCode: string
+  groupWaterings: boolean
 }
 
 export type RoomDto = { id: string; name: string }

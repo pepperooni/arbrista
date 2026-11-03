@@ -8,7 +8,14 @@ export const setupSchema = v.object({ householdName: text(60), occupantName: tex
 export const joinSchema = v.object({ occupantName: text(60) })
 
 export const householdPatchSchema = v.partial(
-  v.object({ name: text(60), sessionTime: v.string(), timezone: v.string(), summerStart: v.string(), winterStart: v.string() }),
+  v.object({
+    name: text(60),
+    sessionTime: v.string(),
+    timezone: v.string(),
+    summerStart: v.string(),
+    winterStart: v.string(),
+    groupWaterings: v.boolean(),
+  }),
 )
 
 export const roomSchema = v.object({ name: text(40) })

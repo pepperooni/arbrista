@@ -6,6 +6,7 @@ import { migrateD1 } from '../infrastructure/sqlite/d1-migrate.ts'
 import type { D1Migratable } from '../infrastructure/sqlite/d1-migrate.ts'
 import init0001 from '../infrastructure/sqlite/migrations/0001_init.sql'
 import deviceSessions0002 from '../infrastructure/sqlite/migrations/0002_device_sessions.sql'
+import groupWaterings0003 from '../infrastructure/sqlite/migrations/0003_group_waterings.sql'
 import type { D1Like } from '../infrastructure/sqlite/d1.ts'
 import { createKvPhotoStorage } from '../infrastructure/kv-photo-storage.ts'
 import { createPlantNetIdentifier } from '../infrastructure/plantnet-identifier.ts'
@@ -46,6 +47,7 @@ function vapidKeys(env: Env): Promise<VapidKeys> {
 const MIGRATIONS = [
   { name: '0001_init.sql', sql: init0001 },
   { name: '0002_device_sessions.sql', sql: deviceSessions0002 },
+  { name: '0003_group_waterings.sql', sql: groupWaterings0003 },
 ]
 
 // Each isolate makes sure the schema is up to date once, before serving: a plain

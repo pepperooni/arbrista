@@ -106,3 +106,10 @@ describe('connecting another device', () => {
     expect((await hh.authenticate(lea.token)).name).toBe('Léa')
   })
 })
+
+it('groups waterings by default and can turn it off', async () => {
+  await hh.setup({ householdName: 'Maison', occupantName: 'Léa' })
+  expect((await hh.getSettings()).groupWaterings).toBe(true)
+  await hh.updateSettings({ groupWaterings: false })
+  expect((await hh.getSettings()).groupWaterings).toBe(false)
+})

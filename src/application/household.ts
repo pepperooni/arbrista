@@ -5,9 +5,17 @@ import { validateSeasonBounds } from '../domain/season.ts'
 import type { Clock, HouseholdRepository, OccupantRepository } from './ports.ts'
 
 export type AuthResult = { token: string; occupant: Occupant }
-export type HouseholdSettingsPatch = Partial<Pick<Household, 'name' | 'sessionTime' | 'timezone' | 'summerStart' | 'winterStart'>>
+export type HouseholdSettingsPatch = Partial<
+  Pick<Household, 'name' | 'sessionTime' | 'timezone' | 'summerStart' | 'winterStart' | 'groupWaterings'>
+>
 
-const DEFAULTS = { sessionTime: '18:00', timezone: 'Europe/Paris', summerStart: '04-01', winterStart: '10-01' } as const
+const DEFAULTS = {
+  sessionTime: '18:00',
+  timezone: 'Europe/Paris',
+  summerStart: '04-01',
+  winterStart: '10-01',
+  groupWaterings: true,
+} as const
 
 export const hashToken = (token: string): string => createHash('sha256').update(token).digest('hex')
 const newInviteCode = (): string => randomBytes(10).toString('base64url')

@@ -1,0 +1,1 @@
+ALTER TABLE household ADD COLUMN group_waterings INTEGER NOT NULL DEFAULT 1;

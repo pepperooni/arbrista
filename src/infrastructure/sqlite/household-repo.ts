@@ -9,6 +9,7 @@ type Row = {
   summer_start: string
   winter_start: string
   last_reminder_date: string | null
+  group_waterings: number
 }
 
 export function createHouseholdRepository(db: SqlDatabase): HouseholdRepository {
@@ -24,6 +25,7 @@ export function createHouseholdRepository(db: SqlDatabase): HouseholdRepository 
         summerStart: row.summer_start,
         winterStart: row.winter_start,
         lastReminderDate: row.last_reminder_date,
+        groupWaterings: row.group_waterings === 1,
       }
     },
     async claimReminder(day) {
@@ -36,11 +38,11 @@ export function createHouseholdRepository(db: SqlDatabase): HouseholdRepository 
     },
     async save(h) {
       await db.run(
-        `INSERT INTO household (id, name, invite_code, session_time, timezone, summer_start, winter_start, last_reminder_date)
-         VALUES (1, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO household (id, name, invite_code, session_time, timezone, summer_start, winter_start, last_reminder_date, group_waterings)
+         VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (id) DO UPDATE SET name = excluded.name, invite_code = excluded.invite_code,
            session_time = excluded.session_time, timezone = excluded.timezone, summer_start = excluded.summer_start,
-           winter_start = excluded.winter_start`,
+           winter_start = excluded.winter_start, group_waterings = excluded.group_waterings`,
         h.name,
         h.inviteCode,
         h.sessionTime,
@@ -48,6 +50,7 @@ export function createHouseholdRepository(db: SqlDatabase): HouseholdRepository 
         h.summerStart,
         h.winterStart,
         h.lastReminderDate,
+        h.groupWaterings ? 1 : 0,
       )
     },
   }

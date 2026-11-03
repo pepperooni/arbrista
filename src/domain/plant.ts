@@ -11,6 +11,8 @@ export type Household = {
   summerStart: MonthDay
   winterStart: MonthDay
   lastReminderDate: LocalDate | null
+  /** Water some plants a little early or late so that sessions gather more plants. */
+  groupWaterings: boolean
 }
 
 export type Occupant = { id: string; name: string; createdAt: string; removedAt: string | null }
