@@ -15,7 +15,7 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.ts',
       registerType: 'autoUpdate',
-      injectRegister: 'auto',
+      injectRegister: false, // registered in web/src/lib/updates.ts
       injectManifest: { globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'] },
       manifest: {
         name: 'Arbrista',
