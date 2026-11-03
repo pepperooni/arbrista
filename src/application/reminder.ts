@@ -11,7 +11,7 @@ export function reminderPayload(urgentNames: string[], queueSize: number): PushP
       ? `${first} ne peut plus attendre`
       : urgentNames.length === 2
         ? `${first} et ${second} ne peuvent plus attendre`
-        : `${first}, ${second} et ${urgentNames.length - 2} autres ne peuvent plus attendre`
+        : `${first}, ${second} et ${urgentNames.length - 2} ${urgentNames.length === 3 ? 'autre' : 'autres'} ne peuvent plus attendre`
   const queue = queueSize === 1 ? '1 plante dans la file' : `${queueSize} plantes dans la file`
   return { title: '🌿 Arrosage', body: `${who.charAt(0).toUpperCase()}${who.slice(1)} · ${queue}`, url: '/' }
 }

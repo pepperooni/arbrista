@@ -118,4 +118,5 @@ it.each([
   [['Ficus'], 6, 'Le Ficus ne peut plus attendre · 6 plantes dans la file'],
   [['Ficus', 'Basilic'], 6, 'Le Ficus et le Basilic ne peuvent plus attendre · 6 plantes dans la file'],
   [['Ficus', 'Basilic', 'Pilea', 'Monstera'], 1, 'Le Ficus, le Basilic et 2 autres ne peuvent plus attendre · 1 plante dans la file'],
+  [['Ficus', 'Basilic', 'Pilea'], 3, 'Le Ficus, le Basilic et 1 autre ne peuvent plus attendre · 3 plantes dans la file'],
 ])('reminder text %#', (names, size, body) => expect(reminderPayload(names, size)).toEqual({ title: '🌿 Arrosage', body, url: '/' }))
