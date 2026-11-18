@@ -9,6 +9,7 @@ Arbrista est une application mobile (PWA) pour suivre l'arrosage des plantes de 
 - **Rythmes d'arrosage** : jours fixes (par ex. lundi et jeudi, toutes les N semaines) ou « tous les N jours après le dernier arrosage ». Un rythme d'hiver distinct est possible.
 - **Sessions d'arrosage** : chaque jour, l'application regroupe les plantes dues ou en retard en une seule liste. Une seule notification par session est envoyée, jamais une par plante.
 - **Partage** : tous les occupants du logement voient la même session, et chacun peut acquitter une plante (« Arrosée par Léa »).
+- **Plusieurs logements** : chaque nouvel utilisateur peut créer son propre logement depuis l'écran d'accueil. Les logements sont étanches : plantes, pièces, occupants et rappels ne sont visibles que de leurs occupants.
 
 ## Démarrer en local
 
@@ -20,7 +21,7 @@ npm run dev:server   # API sur http://localhost:3000
 npm run dev:web      # interface sur http://localhost:5173 (avec rechargement à chaud)
 ```
 
-Ouvrez http://localhost:5173, créez le logement, puis invitez les autres occupants depuis l'onglet **Logement** (QR code ou lien).
+Ouvrez http://localhost:5173, créez votre logement, puis invitez les autres occupants depuis l'onglet **Logement** (QR code ou lien).
 
 Pour servir l'application complète comme en production :
 

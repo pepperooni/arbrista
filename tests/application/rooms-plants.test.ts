@@ -1,6 +1,6 @@
 import { beforeEach, it, expect } from 'vitest'
 import { createTestContext } from '../support/test-context.ts'
-import { makeHouseholdUseCases } from '../../src/application/household.ts'
+import { makeAccountUseCases } from '../../src/application/accounts.ts'
 import { makeRoomUseCases } from '../../src/application/rooms.ts'
 import { makePlantUseCases } from '../../src/application/plants.ts'
 import { ValidationError } from '../../src/domain/errors.ts'
@@ -14,7 +14,7 @@ const weekly7: RhythmInput = { kind: 'interval', everyDays: 7 }
 
 beforeEach(async () => {
   ctx = createTestContext()
-  await makeHouseholdUseCases(ctx.deps).setup({ householdName: 'Maison', occupantName: 'Léa' })
+  await makeAccountUseCases(ctx.deps).createHousehold({ householdName: 'Maison', occupantName: 'Léa' })
   rooms = makeRoomUseCases(ctx.deps)
   plants = makePlantUseCases(ctx.deps)
 })

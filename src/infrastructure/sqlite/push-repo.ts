@@ -4,7 +4,7 @@ import type { SqlDatabase } from './sql.ts'
 
 type Row = { id: string; occupant_id: string; endpoint: string; p256dh: string; auth: string }
 
-export function createPushSubscriptionRepository(db: SqlDatabase): PushSubscriptionRepository {
+export function createPushSubscriptionRepository(db: SqlDatabase, householdId: number): PushSubscriptionRepository {
   return {
     async upsert(s) {
       await db.run(
@@ -21,7 +21,10 @@ export function createPushSubscriptionRepository(db: SqlDatabase): PushSubscript
       await db.run('DELETE FROM push_subscription WHERE endpoint = ?', endpoint)
     },
     async list() {
-      return (await db.all<Row>('SELECT * FROM push_subscription ORDER BY rowid')).map(
+      return (await db.all<Row>(
+        'SELECT * FROM push_subscription WHERE occupant_id IN (SELECT id FROM occupant WHERE household_id = ?) ORDER BY rowid',
+        householdId,
+      )).map(
         (r): PushSubscription => ({ id: r.id, occupantId: r.occupant_id, endpoint: r.endpoint, p256dh: r.p256dh, auth: r.auth }),
       )
     },

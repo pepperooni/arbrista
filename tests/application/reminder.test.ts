@@ -1,5 +1,6 @@
 import { beforeEach, it, expect } from 'vitest'
 import { createTestContext } from '../support/test-context.ts'
+import { makeAccountUseCases } from '../../src/application/accounts.ts'
 import { makeHouseholdUseCases } from '../../src/application/household.ts'
 import { makePlantUseCases } from '../../src/application/plants.ts'
 import { makeWateringUseCases } from '../../src/application/watering.ts'
@@ -16,7 +17,7 @@ let ficus: Plant
 // Paris is UTC+1 in November: 18:00 local = 17:00Z.
 beforeEach(async () => {
   ctx = createTestContext()
-  lea = (await makeHouseholdUseCases(ctx.deps).setup({ householdName: 'Maison', occupantName: 'Léa' })).occupant
+  lea = (await makeAccountUseCases(ctx.deps).createHousehold({ householdName: 'Maison', occupantName: 'Léa' })).occupant
   // These tests are about the reminder itself, on exact due dates (grouping has its own tests).
   await makeHouseholdUseCases(ctx.deps).updateSettings({ groupWaterings: false })
   plants = makePlantUseCases(ctx.deps)

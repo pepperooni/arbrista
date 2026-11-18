@@ -1,6 +1,6 @@
 import { beforeEach, it, expect } from 'vitest'
 import { createTestContext } from '../support/test-context.ts'
-import { makeHouseholdUseCases } from '../../src/application/household.ts'
+import { makeAccountUseCases } from '../../src/application/accounts.ts'
 import { makePlantUseCases } from '../../src/application/plants.ts'
 import { makePhotoUseCases } from '../../src/application/photos.ts'
 import { NotFoundError, ValidationError } from '../../src/domain/errors.ts'
@@ -14,7 +14,7 @@ const jpeg = { data: new Uint8Array([1, 2, 3]), mimeType: 'image/jpeg' }
 
 beforeEach(async () => {
   ctx = createTestContext()
-  await makeHouseholdUseCases(ctx.deps).setup({ householdName: 'Maison', occupantName: 'Léa' })
+  await makeAccountUseCases(ctx.deps).createHousehold({ householdName: 'Maison', occupantName: 'Léa' })
   plants = makePlantUseCases(ctx.deps)
   photos = makePhotoUseCases(ctx.deps)
   plant = await plants.create({ name: 'Ficus', summerRhythm: { kind: 'interval', everyDays: 7 } })

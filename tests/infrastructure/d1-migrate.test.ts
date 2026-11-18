@@ -88,3 +88,46 @@ it('checking an up-to-date database costs a single query', async () => {
   await migrateD1(counting, [init])
   expect(prepared).toBe(1)
 })
+
+const migration = (name: string) => ({
+  name,
+  sql: readFileSync(new URL(`../../src/infrastructure/sqlite/migrations/${name}`, import.meta.url), 'utf8'),
+})
+
+it('moves an existing single household to multi-household without losing anything (0004)', async () => {
+  const d1 = fakeD1()
+  d1.db.exec('PRAGMA foreign_keys = ON') // as on D1
+  const before = [init, migration('0002_device_sessions.sql'), migration('0003_group_waterings.sql')]
+  await migrateD1(d1, before)
+  d1.db.exec(`
+    INSERT INTO household VALUES (1, 'Maison', 'invite', '18:00', 'Europe/Paris', '04-01', '10-01', '2026-11-01', 0);
+    INSERT INTO occupant (id, name, created_at) VALUES ('o1', 'Léa', '2026-11-01T00:00:00Z');
+    INSERT INTO room VALUES ('r1', 'Salon');
+    INSERT INTO plant VALUES ('p1', 'Ficus', NULL, NULL, '{}', 'r1', '{}', NULL, '2026-11-01T00:00:00Z');
+    INSERT INTO plant VALUES ('p2', 'Basilic', NULL, NULL, '{}', NULL, '{}', NULL, '2026-11-01T00:00:00Z');
+    INSERT INTO photo VALUES ('ph1', 'p1', 'a.jpg', 1, '2026-11-01T00:00:00Z');
+    INSERT INTO watering VALUES ('w1', 'p1', 'o1', '2026-11-01T10:00:00Z', '2026-11-01');
+  `)
+  await migrateD1(d1, [...before, migration('0004_households.sql')])
+
+  const all = (sql: string) => d1.db.prepare(sql).all()
+  expect(all('SELECT id, name, invite_code, last_reminder_date, group_waterings FROM household')).toEqual([
+    { id: 1, name: 'Maison', invite_code: 'invite', last_reminder_date: '2026-11-01', group_waterings: 0 },
+  ])
+  expect(all('SELECT id, household_id FROM occupant')).toEqual([{ id: 'o1', household_id: 1 }])
+  expect(all('SELECT id, household_id, name FROM room')).toEqual([{ id: 'r1', household_id: 1, name: 'Salon' }])
+  expect(all('SELECT id, room_id, household_id FROM plant ORDER BY id')).toEqual([
+    { id: 'p1', room_id: 'r1', household_id: 1 },
+    { id: 'p2', room_id: null, household_id: 1 },
+  ])
+  expect(all('SELECT id FROM photo')).toEqual([{ id: 'ph1' }])
+  expect(all('SELECT id FROM watering')).toEqual([{ id: 'w1' }])
+  expect(all('PRAGMA foreign_key_check')).toEqual([])
+  expect(tables(d1)).not.toContain('plant_room_backup')
+
+  // A second household, with a room of the same name.
+  d1.db.exec(`INSERT INTO household (name, invite_code, session_time, timezone, summer_start, winter_start)
+              VALUES ('Appartement', 'other', '18:00', 'Europe/Paris', '04-01', '10-01')`)
+  d1.db.exec("INSERT INTO room VALUES ('r2', 2, 'salon')")
+  expect(() => d1.db.exec("INSERT INTO room VALUES ('r3', 1, 'SALON')")).toThrow(/UNIQUE/)
+})

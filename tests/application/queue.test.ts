@@ -1,5 +1,6 @@
 import { beforeEach, expect, it } from 'vitest'
 import { createTestContext } from '../support/test-context.ts'
+import { makeAccountUseCases } from '../../src/application/accounts.ts'
 import { makeHouseholdUseCases } from '../../src/application/household.ts'
 import { makePlantUseCases } from '../../src/application/plants.ts'
 import { makeReminderUseCases } from '../../src/application/reminder.ts'
@@ -18,7 +19,7 @@ let e: Plant
 beforeEach(async () => {
   ctx = createTestContext('2026-11-02T08:00:00Z')
   household = makeHouseholdUseCases(ctx.deps)
-  lea = (await household.setup({ householdName: 'Maison', occupantName: 'Léa' })).occupant
+  lea = (await makeAccountUseCases(ctx.deps).createHousehold({ householdName: 'Maison', occupantName: 'Léa' })).occupant
   plants = makePlantUseCases(ctx.deps)
   watering = makeWateringUseCases(ctx.deps)
   reminder = makeReminderUseCases({ ...ctx.deps, watering })

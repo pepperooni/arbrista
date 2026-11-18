@@ -25,23 +25,25 @@ const toPlant = (r: Row): Plant => ({
   createdAt: r.created_at,
 })
 
-export function createPlantRepository(db: SqlDatabase): PlantRepository {
+export function createPlantRepository(db: SqlDatabase, householdId: number): PlantRepository {
   return {
     async list() {
-      return (await db.all<Row>('SELECT * FROM plant ORDER BY name COLLATE NOCASE')).map(toPlant)
+      return (await db.all<Row>('SELECT * FROM plant WHERE household_id = ? ORDER BY name COLLATE NOCASE', householdId)).map(toPlant)
     },
     async get(id) {
-      const row = await db.get<Row>('SELECT * FROM plant WHERE id = ?', id)
+      const row = await db.get<Row>('SELECT * FROM plant WHERE id = ? AND household_id = ?', id, householdId)
       return row ? toPlant(row) : null
     },
     async save(p) {
       await db.run(
-        `INSERT INTO plant (id, name, scientific_name, description, care, room_id, summer_rhythm, winter_rhythm, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO plant (id, household_id, name, scientific_name, description, care, room_id, summer_rhythm, winter_rhythm, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (id) DO UPDATE SET name = excluded.name, scientific_name = excluded.scientific_name,
            description = excluded.description, care = excluded.care, room_id = excluded.room_id,
-           summer_rhythm = excluded.summer_rhythm, winter_rhythm = excluded.winter_rhythm`,
+           summer_rhythm = excluded.summer_rhythm, winter_rhythm = excluded.winter_rhythm
+         WHERE plant.household_id = excluded.household_id`,
         p.id,
+        householdId,
         p.name,
         p.scientificName,
         p.description,
@@ -53,7 +55,7 @@ export function createPlantRepository(db: SqlDatabase): PlantRepository {
       )
     },
     async remove(id) {
-      await db.run('DELETE FROM plant WHERE id = ?', id)
+      await db.run('DELETE FROM plant WHERE id = ? AND household_id = ?', id, householdId)
     },
   }
 }

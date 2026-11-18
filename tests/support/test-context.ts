@@ -1,5 +1,6 @@
 import type { PushPayload, PushResult } from '../../src/application/ports.ts'
 import type { PushSubscription } from '../../src/domain/plant.ts'
+import { createAccountRepository } from '../../src/infrastructure/sqlite/account-repo.ts'
 import { openDatabase } from '../../src/infrastructure/sqlite/database.ts'
 import { createHouseholdRepository } from '../../src/infrastructure/sqlite/household-repo.ts'
 import { createOccupantRepository } from '../../src/infrastructure/sqlite/occupant-repo.ts'
@@ -45,20 +46,24 @@ export function createFakeNotifier() {
   return notifier
 }
 
-/** Real SQLite repositories on an in-memory database, plus fakes for the outside world. */
-export function createTestContext(start = '2026-11-02T08:00:00Z') {
+/**
+ * Real SQLite repositories on an in-memory database, plus fakes for the outside world.
+ * The household repositories are scoped to household 1: the first one created in the test.
+ */
+export function createTestContext(start = '2026-11-02T08:00:00Z', householdId = 1) {
   const db = openDatabase(':memory:')
   const clock = createFakeClock(start)
   const deps = {
     clock,
-    households: createHouseholdRepository(db),
-    occupants: createOccupantRepository(db),
-    rooms: createRoomRepository(db),
-    plants: createPlantRepository(db),
-    photos: createPhotoRepository(db),
+    accounts: createAccountRepository(db),
+    households: createHouseholdRepository(db, householdId),
+    occupants: createOccupantRepository(db, householdId),
+    rooms: createRoomRepository(db, householdId),
+    plants: createPlantRepository(db, householdId),
+    photos: createPhotoRepository(db, householdId),
     photoStorage: createFakePhotoStorage(),
-    waterings: createWateringRepository(db),
-    pushSubscriptions: createPushSubscriptionRepository(db),
+    waterings: createWateringRepository(db, householdId),
+    pushSubscriptions: createPushSubscriptionRepository(db, householdId),
     notifier: createFakeNotifier(),
   }
   return { db, clock, deps }

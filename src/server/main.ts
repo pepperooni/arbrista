@@ -46,4 +46,4 @@ if (existsSync(join(webDir, 'index.html'))) {
 }
 
 serve({ fetch: app.fetch, port }, (info) => console.log(`Arbrista prêt sur http://localhost:${info.port}`))
-startScheduler(useCases.reminder)
+startScheduler(useCases.reminders)

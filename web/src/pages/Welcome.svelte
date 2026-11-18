@@ -4,8 +4,6 @@
   import { navigate } from '../lib/router.svelte.ts'
   import { signIn } from '../lib/session.svelte.ts'
 
-  let { initialized }: { initialized: boolean } = $props()
-
   let householdName = $state('')
   let occupantName = $state('')
   let error = $state('')
@@ -63,54 +61,53 @@
   <h1>Arbrista</h1>
   <p class="muted tagline">Les plantes de la maison, arrosées au bon moment, sans y penser.</p>
 
-  {#if initialized}
-    <form class="card stack form" onsubmit={claim}>
-      <h2>Déjà membre du logement ?</h2>
-      <p class="muted small">
-        Sur un appareil où vous êtes connecté, ouvrez <strong>Logement → Connecter un autre appareil</strong> et saisissez le code ici.
-      </p>
-      <label class="field">
-        <span>Code de connexion</span>
-        <input
-          class="input code"
-          bind:value={deviceCode}
-          placeholder="ABCD-EFGH"
-          required
-          maxlength="12"
-          autocomplete="one-time-code"
-          autocapitalize="characters"
-          spellcheck="false"
-        />
-      </label>
-      {#if codeError}<p class="error" role="alert">{codeError}</p>{/if}
-      <button class="btn btn-primary btn-block" disabled={busy}>Se connecter</button>
-    </form>
+  <form class="card stack form" onsubmit={create}>
+    <h2>Nouveau sur Arbrista ?</h2>
+    <p class="muted small">Créez votre logement, puis invitez les autres occupants depuis l'onglet <strong>Logement</strong>.</p>
+    <label class="field">
+      <span>Nom du logement</span>
+      <input class="input" bind:value={householdName} placeholder="La maison" required maxlength="60" autocomplete="off" />
+    </label>
+    <label class="field">
+      <span>Votre prénom</span>
+      <input class="input" bind:value={occupantName} placeholder="Léa" required maxlength="60" autocomplete="given-name" />
+    </label>
+    {#if error}<p class="error" role="alert">{error}</p>{/if}
+    <button class="btn btn-primary btn-block" disabled={busy}>Créer mon logement</button>
+  </form>
 
-    <form class="card stack form" onsubmit={openInvite}>
-      <h2>Nouvel occupant ?</h2>
-      <p class="muted small">Collez le lien d'invitation reçu d'un occupant (onglet <strong>Logement → Inviter</strong>).</p>
-      <label class="field">
-        <span>Lien d'invitation</span>
-        <input class="input" bind:value={invite} placeholder="https://…/join/…" required autocomplete="off" spellcheck="false" />
-      </label>
-      {#if inviteError}<p class="error" role="alert">{inviteError}</p>{/if}
-      <button class="btn btn-block">Rejoindre le logement</button>
-    </form>
-  {:else}
-    <form class="card stack form" onsubmit={create}>
-      <h2>Créer votre logement</h2>
-      <label class="field">
-        <span>Nom du logement</span>
-        <input class="input" bind:value={householdName} placeholder="La maison" required maxlength="60" autocomplete="off" />
-      </label>
-      <label class="field">
-        <span>Votre prénom</span>
-        <input class="input" bind:value={occupantName} placeholder="Léa" required maxlength="60" autocomplete="given-name" />
-      </label>
-      {#if error}<p class="error" role="alert">{error}</p>{/if}
-      <button class="btn btn-primary btn-block" disabled={busy}>Commencer</button>
-    </form>
-  {/if}
+  <form class="card stack form" onsubmit={openInvite}>
+    <h2>Invité dans un logement ?</h2>
+    <p class="muted small">Collez le lien d'invitation reçu d'un occupant (onglet <strong>Logement → Inviter</strong>).</p>
+    <label class="field">
+      <span>Lien d'invitation</span>
+      <input class="input" bind:value={invite} placeholder="https://…/join/…" required autocomplete="off" spellcheck="false" />
+    </label>
+    {#if inviteError}<p class="error" role="alert">{inviteError}</p>{/if}
+    <button class="btn btn-block">Rejoindre le logement</button>
+  </form>
+
+  <form class="card stack form" onsubmit={claim}>
+    <h2>Déjà membre d'un logement ?</h2>
+    <p class="muted small">
+      Sur un appareil où vous êtes connecté, ouvrez <strong>Logement → Connecter un autre appareil</strong> et saisissez le code ici.
+    </p>
+    <label class="field">
+      <span>Code de connexion</span>
+      <input
+        class="input code"
+        bind:value={deviceCode}
+        placeholder="ABCD-EFGH"
+        required
+        maxlength="12"
+        autocomplete="one-time-code"
+        autocapitalize="characters"
+        spellcheck="false"
+      />
+    </label>
+    {#if codeError}<p class="error" role="alert">{codeError}</p>{/if}
+    <button class="btn btn-block" disabled={busy}>Se connecter</button>
+  </form>
 </main>
 
 <style>

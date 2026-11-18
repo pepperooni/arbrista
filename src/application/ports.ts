@@ -5,6 +5,26 @@ export interface Clock {
   now(): Date
 }
 
+/**
+ * Operations across households: creating one, finding it from an invitation or a device.
+ * Every other repository is scoped to a single household.
+ */
+export interface AccountRepository {
+  /** Creates the household and returns its id. */
+  createHousehold(h: Household): Promise<number>
+  householdIdByInviteCode(inviteCode: string): Promise<number | null>
+  householdIds(): Promise<number[]>
+  /** Creates the occupant in the household together with a first device session. */
+  addOccupant(householdId: number, o: Occupant, tokenHash: string): Promise<void>
+  /** Signs one more device in for an existing occupant. */
+  addSession(occupantId: string, tokenHash: string, at: string): Promise<void>
+  /** The active occupant owning this device session, if any, with their household. */
+  findByTokenHash(hash: string): Promise<{ occupant: Occupant; householdId: number } | null>
+  /** Deletes the code and returns its active occupant if it was still valid at `nowIso` (single use, atomic). */
+  consumeDeviceCode(codeHash: string, nowIso: string): Promise<{ occupant: Occupant; householdId: number } | null>
+}
+
+/** The household the repository is scoped to. */
 export interface HouseholdRepository {
   get(): Promise<Household | null>
   /** Saves the settings; never changes the reminder date (see claimReminder). */
@@ -14,21 +34,13 @@ export interface HouseholdRepository {
 }
 
 export interface OccupantRepository {
-  /** Creates the occupant together with a first device session. */
-  add(o: Occupant, tokenHash: string): Promise<void>
   get(id: string): Promise<Occupant | null>
-  /** Signs one more device in for an existing occupant. */
-  addSession(occupantId: string, tokenHash: string, at: string): Promise<void>
-  /** The active occupant owning this device session, if any. */
-  findByTokenHash(hash: string): Promise<Occupant | null>
   listActive(): Promise<Occupant[]>
   /** id → name for every occupant, removed ones included (history keeps their name). */
   namesById(): Promise<Map<string, string>>
   /** Sets removed_at and deletes the occupant's device sessions, device codes and push subscriptions. */
   markRemoved(id: string, at: string): Promise<void>
   saveDeviceCode(occupantId: string, codeHash: string, expiresAt: string): Promise<void>
-  /** Deletes the code and returns its occupant if it was still valid at `nowIso` (single use, atomic). */
-  consumeDeviceCode(codeHash: string, nowIso: string): Promise<string | null>
 }
 
 export interface RoomRepository {

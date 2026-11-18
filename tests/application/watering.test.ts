@@ -1,5 +1,6 @@
 import { beforeEach, it, expect } from 'vitest'
 import { createTestContext } from '../support/test-context.ts'
+import { makeAccountUseCases } from '../../src/application/accounts.ts'
 import { makeHouseholdUseCases } from '../../src/application/household.ts'
 import { makePlantUseCases } from '../../src/application/plants.ts'
 import { makeWateringUseCases } from '../../src/application/watering.ts'
@@ -16,8 +17,8 @@ let ficus: Plant
 beforeEach(async () => {
   ctx = createTestContext() // 2026-11-02T08:00:00Z, a Monday
   household = makeHouseholdUseCases(ctx.deps)
-  lea = (await household.setup({ householdName: 'Maison', occupantName: 'Léa' })).occupant
-  tom = (await household.join((await household.getSettings()).inviteCode, 'Tom')).occupant
+  lea = (await makeAccountUseCases(ctx.deps).createHousehold({ householdName: 'Maison', occupantName: 'Léa' })).occupant
+  tom = (await makeAccountUseCases(ctx.deps).join((await household.getSettings()).inviteCode, 'Tom')).occupant
   // These tests are about acknowledging waterings, on exact due dates (grouping has its own tests).
   await household.updateSettings({ groupWaterings: false })
   plants = makePlantUseCases(ctx.deps)

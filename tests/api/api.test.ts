@@ -7,14 +7,14 @@ import { openDatabase } from '../../src/infrastructure/sqlite/database.ts'
 import { createFakeClock, createFakeNotifier, createFakePhotoStorage } from '../support/test-context.ts'
 
 let app: Hono<AppEnv>
+let useCases: ReturnType<typeof composeUseCases>
+let clock: ReturnType<typeof createFakeClock>
+let notifier: ReturnType<typeof createFakeNotifier>
 
 beforeEach(() => {
-  const useCases = composeUseCases({
-    db: openDatabase(':memory:'),
-    clock: createFakeClock('2026-11-02T08:00:00Z'),
-    photoStorage: createFakePhotoStorage(),
-    notifier: createFakeNotifier(),
-  })
+  clock = createFakeClock('2026-11-02T08:00:00Z')
+  notifier = createFakeNotifier()
+  useCases = composeUseCases({ db: openDatabase(':memory:'), clock, photoStorage: createFakePhotoStorage(), notifier })
   app = createApp(useCases, { vapidPublicKey: 'pk' })
 })
 
@@ -37,7 +37,6 @@ async function get(path: string, token: string) {
 }
 
 it('household journey: setup, invite, plant, session, watering shared between occupants', async () => {
-  expect(await (await app.request('/api/setup')).json()).toEqual({ initialized: false })
   const lea = await post('/api/setup', { householdName: 'Maison', occupantName: 'Léa' })
   const { inviteCode } = await get('/api/household', lea.token)
   const tom = await post(`/api/join/${inviteCode}`, { occupantName: 'Tom' })
@@ -48,6 +47,50 @@ it('household journey: setup, invite, plant, session, watering shared between oc
   const session = await get('/api/session/today', lea.token)
   expect(session.pending).toBe(0)
   expect(session.items[0].done.occupantName).toBe('Tom')
+})
+
+it('a new user creates their own household, kept apart from the existing ones', async () => {
+  const lea = await post('/api/setup', { householdName: 'Maison', occupantName: 'Léa' })
+  await post('/api/rooms', { name: 'Salon' }, lea.token)
+  const ficus = await post('/api/plants', { name: 'Ficus', summerRhythm: { kind: 'interval', everyDays: 3 } }, lea.token)
+
+  // Someone with no invitation creates a second household.
+  const sam = await post('/api/setup', { householdName: 'Appartement', occupantName: 'Sam' })
+  expect((await get('/api/household', sam.token)).name).toBe('Appartement')
+  expect(await get('/api/plants', sam.token)).toEqual([])
+  expect(await get('/api/rooms', sam.token)).toEqual([])
+  expect((await get('/api/occupants', sam.token)).map((o: { name: string }) => o.name)).toEqual(['Sam'])
+  expect((await get('/api/session/today', sam.token)).items).toEqual([])
+  // Same room name allowed in another household.
+  await post('/api/rooms', { name: 'Salon' }, sam.token)
+
+  // Sam cannot reach Léa's plant, nor remove Léa.
+  const headers = auth(sam.token)
+  expect((await app.request(`/api/plants/${ficus.id}`, { headers })).status).toBe(404)
+  expect((await app.request(`/api/plants/${ficus.id}/waterings`, { method: 'POST', headers, body: '{}' })).status).toBe(404)
+  expect((await app.request(`/api/plants/${ficus.id}`, { method: 'DELETE', headers })).status).toBe(404)
+  expect((await app.request(`/api/occupants/${lea.occupant.id}`, { method: 'DELETE', headers })).status).toBe(404)
+  expect((await get('/api/plants', lea.token)).map((p: { name: string }) => p.name)).toEqual(['Ficus'])
+
+  // Joining with Sam's invitation lands in Sam's household.
+  const { inviteCode } = await get('/api/household', sam.token)
+  const max = await post(`/api/join/${inviteCode}`, { occupantName: 'Max' })
+  expect((await get('/api/household', max.token)).name).toBe('Appartement')
+})
+
+it('sends each household its own session reminder', async () => {
+  const lea = await post('/api/setup', { householdName: 'Maison', occupantName: 'Léa' })
+  const sam = await post('/api/setup', { householdName: 'Appartement', occupantName: 'Sam' })
+  const sub = (endpoint: string) => ({ endpoint: `https://push.example/${endpoint}`, keys: { p256dh: 'k', auth: 'a' } })
+  for (const [who, token] of [['lea-phone', lea.token], ['sam-phone', sam.token]]) {
+    const res = await app.request('/api/push/subscriptions', { method: 'POST', headers: auth(token), body: JSON.stringify(sub(who)) })
+    expect(res.status).toBe(204)
+  }
+  await post('/api/plants', { name: 'Ficus', summerRhythm: { kind: 'interval', everyDays: 3 } }, lea.token)
+  // Every 3 days, created today: due today. Overdue (urgent) two days later.
+  clock.set('2026-11-04T18:30:00Z')
+  expect(await useCases.reminders.runIfDue()).toEqual({ notified: 1 })
+  expect(notifier.sent.map((s) => s.endpoint)).toEqual(['https://push.example/lea-phone'])
 })
 
 it('rejects requests without a valid token', async () => {

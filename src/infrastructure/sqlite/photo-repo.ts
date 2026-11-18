@@ -12,13 +12,16 @@ const toPhoto = (r: Row): Photo => ({
   createdAt: r.created_at,
 })
 
-export function createPhotoRepository(db: SqlDatabase): PhotoRepository {
+// Photos belong to the household of their plant.
+const OWNED = 'plant_id IN (SELECT id FROM plant WHERE household_id = ?)'
+
+export function createPhotoRepository(db: SqlDatabase, householdId: number): PhotoRepository {
   return {
     async listByPlant(plantId) {
-      return (await db.all<Row>('SELECT * FROM photo WHERE plant_id = ? ORDER BY created_at, rowid', plantId)).map(toPhoto)
+      return (await db.all<Row>(`SELECT * FROM photo WHERE plant_id = ? AND ${OWNED} ORDER BY created_at, rowid`, plantId, householdId)).map(toPhoto)
     },
     async get(id) {
-      const row = await db.get<Row>('SELECT * FROM photo WHERE id = ?', id)
+      const row = await db.get<Row>(`SELECT * FROM photo WHERE id = ? AND ${OWNED}`, id, householdId)
       return row ? toPhoto(row) : null
     },
     async save(p) {
@@ -33,10 +36,10 @@ export function createPhotoRepository(db: SqlDatabase): PhotoRepository {
       )
     },
     async remove(id) {
-      await db.run('DELETE FROM photo WHERE id = ?', id)
+      await db.run(`DELETE FROM photo WHERE id = ? AND ${OWNED}`, id, householdId)
     },
     async mainFileNames() {
-      const rows = await db.all<Row>('SELECT plant_id, file_name FROM photo WHERE is_main = 1')
+      const rows = await db.all<Row>(`SELECT plant_id, file_name FROM photo WHERE is_main = 1 AND ${OWNED}`, householdId)
       return new Map(rows.map((r) => [r.plant_id, r.file_name]))
     },
   }

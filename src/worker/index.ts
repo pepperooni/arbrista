@@ -7,6 +7,7 @@ import type { D1Migratable } from '../infrastructure/sqlite/d1-migrate.ts'
 import init0001 from '../infrastructure/sqlite/migrations/0001_init.sql'
 import deviceSessions0002 from '../infrastructure/sqlite/migrations/0002_device_sessions.sql'
 import groupWaterings0003 from '../infrastructure/sqlite/migrations/0003_group_waterings.sql'
+import households0004 from '../infrastructure/sqlite/migrations/0004_households.sql'
 import type { D1Like } from '../infrastructure/sqlite/d1.ts'
 import { createKvPhotoStorage } from '../infrastructure/kv-photo-storage.ts'
 import { createPlantNetIdentifier } from '../infrastructure/plantnet-identifier.ts'
@@ -48,6 +49,7 @@ const MIGRATIONS = [
   { name: '0001_init.sql', sql: init0001 },
   { name: '0002_device_sessions.sql', sql: deviceSessions0002 },
   { name: '0003_group_waterings.sql', sql: groupWaterings0003 },
+  { name: '0004_households.sql', sql: households0004 },
 ]
 
 // Each isolate makes sure the schema is up to date once, before serving: a plain
@@ -90,6 +92,6 @@ export default {
 
   /** Cron trigger (every minute): sends today's session reminder once it is due. */
   async scheduled(_event: unknown, env: Env, ctx: ExecutionContext): Promise<void> {
-    ctx.waitUntil(wire(env).then(({ useCases }) => useCases.reminder.runIfDue()))
+    ctx.waitUntil(wire(env).then(({ useCases }) => useCases.reminders.runIfDue()))
   },
 }
